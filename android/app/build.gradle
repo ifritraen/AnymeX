@@ -48,15 +48,17 @@ android {
             def keystorePropertiesFile = rootProject.file('key.properties')
             if (keystorePropertiesFile.exists()) {
                 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-                keyAlias keystoreProperties['keyAlias']
-                keyPassword keystoreProperties['keyPassword']
-                storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
-                storePassword keystoreProperties['storePassword']
+                def kFile = keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+                if (kFile != null && kFile.exists()) {
+                    keyAlias keystoreProperties['keyAlias']
+                    keyPassword keystoreProperties['keyPassword']
+                    storeFile kFile
+                    storePassword keystoreProperties['storePassword']
+                } else {
+                    initWith(signingConfigs.debug)
+                }
             } else {
-                keyAlias 'androiddebugkey'
-                keyPassword 'android'
-                storeFile file("${System.getProperty('user.home')}/.android/debug.keystore")
-                storePassword 'android'
+                initWith(signingConfigs.debug)
             }
         }
     }
