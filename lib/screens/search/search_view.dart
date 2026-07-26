@@ -349,9 +349,7 @@ class _SearchPageState extends State<SearchPage>
     try {
       final res = searchQuery.isNotEmpty
           ? await _selectedSource!.methods.search(searchQuery, 1, [])
-          : (_extensionFetchMode == 'latest'
-              ? await _selectedSource!.methods.getLatest(1)
-              : await _selectedSource!.methods.getPopular(1));
+          : await _selectedSource!.methods.getPopular(1);
       final rawList = res.list;
       if (!mounted) return;
 
@@ -400,9 +398,7 @@ class _SearchPageState extends State<SearchPage>
     final items = installed.map((s) {
       final Future<List<dynamic>> future = (searchQuery.isNotEmpty
               ? s.methods.search(searchQuery, 1, [])
-              : (_extensionFetchMode == 'latest'
-                  ? s.methods.getLatest(1)
-                  : s.methods.getPopular(1)))
+              : s.methods.getPopular(1))
           .then<List<dynamic>>((res) {
         return res.list;
       }).catchError((err) {
@@ -440,9 +436,7 @@ class _SearchPageState extends State<SearchPage>
         final res = _lastSearchQuery.isNotEmpty
             ? await _selectedSource!.methods
                 .search(_lastSearchQuery, nextPage, [])
-            : (_extensionFetchMode == 'latest'
-                ? await _selectedSource!.methods.getLatest(nextPage)
-                : await _selectedSource!.methods.getPopular(nextPage));
+            : await _selectedSource!.methods.getPopular(nextPage);
         results = res.list
             .map((e) => Media.froDMedia(e, effectiveType))
             .toList();

@@ -217,7 +217,7 @@ class _ExtensionSection extends StatelessWidget {
     final sourceController = Get.find<SourceController>();
 
     final Future<List<dynamic>> latestFuture =
-        source.methods.getLatest(1).then<List<dynamic>>((res) => res.list).catchError((_) => <dynamic>[]);
+        source.methods.getPopular(1).then<List<dynamic>>((res) => res.list).catchError((_) => <dynamic>[]);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
