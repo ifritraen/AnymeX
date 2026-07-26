@@ -11,7 +11,6 @@ import 'package:anymex/widgets/common/custom_tiles.dart';
 import 'package:anymex/widgets/common/slider_semantics.dart';
 import 'package:anymex/widgets/custom_widgets/custom_expansion_tile.dart';
 import 'package:anymex/widgets/custom_widgets/custom_text.dart';
-import 'package:anymex/widgets/helper/tv_wrapper.dart';
 import 'package:anymex/widgets/non_widgets/reusable_checkmark.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -174,6 +173,14 @@ class ColorProfileManager {
   };
 
   Future<void> applyColorProfile(String profile, dynamic player) async {
+    if (profile.toLowerCase() == 'custom') {
+      final savedMap = PlayerUiKeys.customColorProfile.get<Map<String, dynamic>>({});
+      if (savedMap.isNotEmpty) {
+        final converted = savedMap.map((k, v) => MapEntry(k.toString(), (v as num).toInt()));
+        await applyCustomSettings(converted, player);
+        return;
+      }
+    }
     final settings = profiles[profile.toLowerCase()];
     if (settings != null && player.platform != null) {
       try {
@@ -190,6 +197,7 @@ class ColorProfileManager {
 
   Future<void> applyCustomSettings(
       Map<String, int> customSettings, dynamic player) async {
+    PlayerUiKeys.customColorProfile.set(customSettings);
     if (player.platform != null) {
       try {
         for (final entry in customSettings.entries) {
@@ -313,8 +321,12 @@ class _ColorProfileBottomSheetState extends State<ColorProfileBottomSheet>
     _selectedShader = settingsController.selectedShader.isEmpty
         ? "Default"
         : settingsController.selectedShader;
+    final savedCustom = PlayerUiKeys.customColorProfile.get<Map<String, dynamic>>({});
     if (widget.currentProfile.toLowerCase() == 'custom') {
       _customSettings = Map.from(widget.activeSettings);
+    } else if (savedCustom.isNotEmpty) {
+      _customSettings = Map<String, int>.from(
+          savedCustom.map((k, v) => MapEntry(k.toString(), (v as num).toInt())));
     } else {
       _customSettings = Map.from(ColorProfileManager.profiles['natural']!);
     }
@@ -783,6 +795,7 @@ class _ColorProfileBottomSheetState extends State<ColorProfileBottomSheet>
 
   Widget _buildPresetsTab(ThemeData theme) {
     Map<String, List<String>> groupedProfiles = {
+      'Custom': ['custom'],
       'Anime': ['anime_4k', 'anime', 'anime_vibrant', 'anime_soft'],
       'Cinema': ['cinema', 'cinema_dark', 'cinema_hdr'],
       'Vivid': ['vivid', 'vivid_pop', 'vivid_warm'],
@@ -1352,26 +1365,66 @@ class _ColorProfileBottomSheetState extends State<ColorProfileBottomSheet>
         ),
         // Reset button for Custom tab
         Padding(
-          padding: const EdgeInsets.all(24),
-          child: SizedBox(
-            width: double.infinity,
-            child: FilledButton.tonal(
-              onPressed: _resetCustomToDefault,
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+          child: Column(
+            children: [
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () async {
+                    await _applyCustomSettings();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('Saved to Custom Preset!'),
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          behavior: SnackBarBehavior.floating,
+                          margin: const EdgeInsets.all(16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.save_rounded, size: 20),
+                      SizedBox(width: 8),
+                      Text('Save as Custom Preset'),
+                    ],
+                  ),
                 ),
               ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.refresh, size: 20),
-                  SizedBox(width: 8),
-                  Text('Reset to Default Settings'),
-                ],
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.tonal(
+                  onPressed: _resetCustomToDefault,
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.refresh, size: 20),
+                      SizedBox(width: 8),
+                      Text('Reset to Default Settings'),
+                    ],
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ],

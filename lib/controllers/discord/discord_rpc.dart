@@ -13,7 +13,6 @@ import 'package:anymex/widgets/non_widgets/snackbar.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_discord_rpc_fork/flutter_discord_rpc.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 
@@ -106,7 +105,6 @@ class DiscordRPCController extends GetxController with WidgetsBindingObserver {
       'wss://gateway.discord.gg/?v=10&encoding=json';
   static const String _apiBaseUrl = 'https://discord.com/api/v10';
 
-  FlutterDiscordRPC? _discordRPC;
   StreamSubscription<bool>? _desktopConnectionSub;
 
   WebSocket? _gatewaySocket;
@@ -270,44 +268,14 @@ class DiscordRPCController extends GetxController with WidgetsBindingObserver {
   }
 
   Future<void> _initializeDesktopRPC() async {
-    try {
-      await FlutterDiscordRPC.initialize(_applicationId);
-      _discordRPC = FlutterDiscordRPC.instance;
-      _desktopConnectionSub?.cancel();
-      _desktopConnectionSub =
-          _discordRPC!.isConnectedStream.listen((connected) {
-        _isConnected.value = connected;
-      });
-
-      await _discordRPC!.connect(autoRetry: true);
-      _isConnected.value = _discordRPC!.isConnected;
-      if (!_isConnected.value) {
-        print('Discord RPC connect requested (Desktop), but not connected yet');
-        return;
-      }
-      print('Connected to Discord RPC (Desktop)');
-
-      await updateBrowsingPresence(
-        activity: kDebugMode ? 'Working on the App' : 'Browsing Stuff',
-        details: kDebugMode ? "Coding" : 'Idle',
-      );
-    } catch (e) {
-      print('Failed to connect to Discord RPC: $e');
-      _isConnected.value = false;
-    }
+    _isConnected.value = false;
   }
 
   bool _canUseDesktopRpc(String action) {
     if (isMobile) {
       return true;
     }
-    final connected = _discordRPC != null && _discordRPC!.isConnected;
-    if (!connected) {
-      _isConnected.value = false;
-      print('Skipping $action: Discord RPC is not connected (Desktop)');
-      return false;
-    }
-    return true;
+    return false;
   }
 
   Future<void> _connectMobileGateway() async {
@@ -529,36 +497,7 @@ class DiscordRPCController extends GetxController with WidgetsBindingObserver {
       _gatewaySocket?.add(presencePayload);
       print('Anime presence updated successfully (Mobile)');
     } else {
-      try {
-        await _discordRPC!.setActivity(
-          activity: RPCActivity(
-            details: animeTitle,
-            state:
-                'Episode $episodeNumber ${!episodeName.toLowerCase().contains('episode') ? '– $episodeName' : ''} - $totalEpisodes',
-            activityType: ActivityType.watching,
-            timestamps: RPCTimestamps(
-              start: startTime.millisecondsSinceEpoch,
-              end: endTime.millisecondsSinceEpoch,
-            ),
-            assets: RPCAssets(
-              largeImage: await _processImageUrl(coverUrl),
-              largeText: animeTitle,
-              smallImage: await _processImageUrl(_getAppIconUrl()),
-              smallText: 'AnymeX',
-            ),
-            buttons: [
-              RPCButton(label: 'View Anime', url: anilistUrl),
-              const RPCButton(
-                label: 'Watch on AnymeX',
-                url: 'https://github.com/RyanYuuki/AnymeX/',
-              ),
-            ],
-          ),
-        );
-        print('Anime presence updated successfully');
-      } catch (e) {
-        print('Error updating anime presence: $e');
-      }
+      print('Desktop RPC disabled');
     }
   }
 
@@ -624,31 +563,7 @@ class DiscordRPCController extends GetxController with WidgetsBindingObserver {
       _gatewaySocket?.add(presencePayload);
       print('Paused anime presence updated successfully (Mobile)');
     } else {
-      try {
-        await _discordRPC!.setActivity(
-          activity: RPCActivity(
-            details: animeTitle,
-            state: 'Episode $episodeNumber$timeDisplay (Paused)',
-            activityType: ActivityType.watching,
-            assets: RPCAssets(
-              largeImage: await _processImageUrl(coverUrl),
-              largeText: animeTitle,
-              smallImage: await _processImageUrl(_getAppIconUrl()),
-              smallText: 'AnymeX',
-            ),
-            buttons: [
-              RPCButton(label: 'View Anime', url: anilistUrl),
-              const RPCButton(
-                label: 'Watch on AnymeX',
-                url: 'https://github.com/RyanYuuki/AnymeX/',
-              ),
-            ],
-          ),
-        );
-        print('Paused anime presence updated successfully');
-      } catch (e) {
-        print('Error updating paused anime presence: $e');
-      }
+      print('Desktop RPC disabled');
     }
   }
 
@@ -708,32 +623,7 @@ class DiscordRPCController extends GetxController with WidgetsBindingObserver {
       _gatewaySocket?.add(presencePayload);
       print('Manga presence updated successfully (Mobile)');
     } else {
-      try {
-        await _discordRPC!.setActivity(
-          activity: RPCActivity(
-            details: mangaTitle,
-            state:
-                'Chapter: $chapterNumber/$totalChapters • Page: $currentPage/$totalPages',
-            activityType: ActivityType.playing,
-            assets: RPCAssets(
-              largeImage: await _processImageUrl(coverUrl),
-              largeText: mangaTitle,
-              smallImage: await _processImageUrl(_getAppIconUrl()),
-              smallText: 'AnymeX',
-            ),
-            buttons: [
-              RPCButton(label: 'View Manga', url: anilistUrl),
-              const RPCButton(
-                label: 'Read on AnymeX',
-                url: 'https://github.com/RyanYuuki/AnymeX/',
-              ),
-            ],
-          ),
-        );
-        print('Manga presence updated successfully');
-      } catch (e) {
-        print('Error updating manga presence: $e');
-      }
+      print('Desktop RPC disabled');
     }
   }
 
@@ -787,31 +677,7 @@ class DiscordRPCController extends GetxController with WidgetsBindingObserver {
       _gatewaySocket?.add(presencePayload);
       print('Media presence updated successfully (Mobile)');
     } else {
-      try {
-        await _discordRPC!.setActivity(
-          activity: RPCActivity(
-            details: animeTitle,
-            state: 'Viewing $type',
-            activityType: ActivityType.watching,
-            assets: RPCAssets(
-              largeImage: await _processImageUrl(media.cover ?? media.poster),
-              largeText: animeTitle,
-              smallImage: await _processImageUrl(_getAppIconUrl()),
-              smallText: 'AnymeX',
-            ),
-            buttons: [
-              RPCButton(label: 'View $type', url: anilistUrl),
-              const RPCButton(
-                label: 'Watch on AnymeX',
-                url: 'https://github.com/RyanYuuki/AnymeX/',
-              ),
-            ],
-          ),
-        );
-        print('Media presence updated successfully');
-      } catch (e) {
-        print('Error updating media presence: $e');
-      }
+      print('Desktop RPC disabled');
     }
   }
 
@@ -870,22 +736,7 @@ class DiscordRPCController extends GetxController with WidgetsBindingObserver {
       _gatewaySocket?.add(presencePayload);
       print('Browsing presence updated successfully (Mobile)');
     } else {
-      try {
-        await _discordRPC!.setActivity(
-          activity: RPCActivity(
-            details: activity ?? 'Browsing Stuff',
-            state: details ?? 'Idle',
-            activityType: ActivityType.playing,
-            assets: RPCAssets(
-              largeImage: await _processImageUrl(_getAppIconUrl()),
-              largeText: 'AnymeX - Anime & Manga',
-            ),
-          ),
-        );
-        print('Browsing presence updated successfully');
-      } catch (e) {
-        print('Error updating browsing presence: $e');
-      }
+      print('Desktop RPC disabled');
     }
   }
 
@@ -908,12 +759,7 @@ class DiscordRPCController extends GetxController with WidgetsBindingObserver {
       _gatewaySocket?.add(jsonEncode(payload));
       print('Presence cleared successfully');
     } else {
-      try {
-        await _discordRPC!.clearActivity();
-        print('Presence cleared successfully');
-      } catch (e) {
-        print('Error clearing presence: $e');
-      }
+      print('Desktop RPC disabled');
     }
   }
 
@@ -935,14 +781,6 @@ class DiscordRPCController extends GetxController with WidgetsBindingObserver {
     } else {
       await _desktopConnectionSub?.cancel();
       _desktopConnectionSub = null;
-      if (_discordRPC != null) {
-        try {
-          await _discordRPC!.disconnect();
-        } catch (e) {
-          print('Error disconnecting from Discord RPC: $e');
-        }
-        _discordRPC = null;
-      }
     }
     _isConnected.value = false;
   }

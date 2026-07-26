@@ -308,10 +308,13 @@ class Header extends StatelessWidget {
     });
   }
 
-  AnymexOnTap _profileIcon(BuildContext context, ServiceHandler profileData) {
-    return AnymexOnTap(
-      onTap: () {
-        return SettingsSheet.show(context);
+  Widget _profileIcon(BuildContext context, ServiceHandler profileData) {
+    return InkWell(
+      onTap: () => SettingsSheet.show(context),
+      onLongPress: () {
+        if (profileData.isLoggedIn.value) {
+          navigate(() => const ProfilePage());
+        }
       },
       child: GestureDetector(
         onLongPress: () {
@@ -340,17 +343,9 @@ class Header extends StatelessWidget {
                 : Icon(IconlyBold.profile,
                     color: context.colors.onSecondaryContainer),
           );
-          if (count > 0) {
-            return Badge(
-              label: Text(count.toString()),
-              backgroundColor: context.colors.primary,
-              textColor: context.colors.onPrimary,
-              child: avatar,
-            );
-          }
-          return avatar;
-        }),
-      ),
+        }
+        return avatar;
+      }),
     );
   }
 }

@@ -33,18 +33,6 @@ class _SettingsAccountsState extends State<SettingsAccounts> {
         'title': "Anilist",
         'color': const Color(0xFF02A9FF),
       },
-      {
-        'service': serviceHandler.malService,
-        'icon': 'assets/images/mal-icon.png',
-        'title': "MyAnimeList",
-        'color': const Color(0xFF2E51A2),
-      },
-      {
-        'service': serviceHandler.simklService,
-        'icon': 'assets/images/simkl-icon.png',
-        'title': "Simkl",
-        'color': const Color(0xFF000000),
-      },
     ];
 
     services.sort((a, b) =>

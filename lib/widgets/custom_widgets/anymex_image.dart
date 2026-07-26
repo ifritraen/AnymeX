@@ -144,12 +144,22 @@ class _AnymeXImageState extends State<AnymeXImage> {
   }
 
   Widget _networkImage(String imageUrl) {
+    final dpr = MediaQuery.maybeDevicePixelRatioOf(context) ?? 2.0;
+    final int? memWidth = (widget.width != null && widget.width! > 0 && widget.width!.isFinite)
+        ? (widget.width! * dpr).toInt()
+        : null;
+    final int? memHeight = (widget.height != null && widget.height! > 0 && widget.height!.isFinite)
+        ? (widget.height! * dpr).toInt()
+        : null;
+
     return CachedNetworkImage(
       cacheManager: AnymeXCacheManager.instance,
       imageUrl: imageUrl,
       httpHeaders: widget.headers,
       width: widget.width,
       height: widget.height,
+      memCacheWidth: memWidth,
+      memCacheHeight: memHeight,
       fit: widget.fit,
       alignment: widget.alignment,
       color: widget.color,

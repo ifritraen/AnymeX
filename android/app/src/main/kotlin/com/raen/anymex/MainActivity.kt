@@ -1,4 +1,4 @@
-package com.ryan.anymex
+package com.raen.anymex
 
 import android.app.PictureInPictureParams
 import android.content.Intent
@@ -29,9 +29,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "app/architecture"
-    private val VOLUME_CHANNEL = "com.ryan.anymex/volume"
-    private val VOLUME_EVENTS = "com.ryan.anymex/volume_events"
-    private val PIP_CHANNEL = "com.ryan.anymex/pip"
+    private val VOLUME_CHANNEL = "com.raen.anymex/volume"
+    private val VOLUME_EVENTS = "com.raen.anymex/volume_events"
+    private val PIP_CHANNEL = "com.raen.anymex/pip"
     private val THUMBNAIL_CHANNEL = "com.anymex.app/thumbnail"
     private val THUMBNAIL_TIMEOUT_MS = 8000L
     private val THUMBNAIL_MAX_AGE_MS = 24 * 60 * 60 * 1000L
@@ -40,10 +40,10 @@ class MainActivity : FlutterActivity() {
 
     private var pipAutoEnterEnabled = false
 
-    private val ACTION_PLAY = "com.ryan.anymex.PIP_PLAY"
-    private val ACTION_PAUSE = "com.ryan.anymex.PIP_PAUSE"
-    private val ACTION_FORWARD = "com.ryan.anymex.PIP_FORWARD"
-    private val ACTION_BACKWARD = "com.ryan.anymex.PIP_BACKWARD"
+    private val ACTION_PLAY = "com.raen.anymex.PIP_PLAY"
+    private val ACTION_PAUSE = "com.raen.anymex.PIP_PAUSE"
+    private val ACTION_FORWARD = "com.raen.anymex.PIP_FORWARD"
+    private val ACTION_BACKWARD = "com.raen.anymex.PIP_BACKWARD"
     private var isPlaying = true
 
     private val pipReceiver = object : BroadcastReceiver() {
@@ -90,7 +90,7 @@ class MainActivity : FlutterActivity() {
             }
         }
 
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.ryan.anymex/utils").setMethodCallHandler { call, result ->
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.raen.anymex/utils").setMethodCallHandler { call, result ->
             when (call.method) {
                 "scanFile" -> {
                     val path = call.argument<String>("path")

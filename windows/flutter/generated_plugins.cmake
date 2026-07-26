@@ -7,7 +7,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
   app_links
   desktop_webview_window
   dynamic_color
-  firebase_core
   flutter_inappwebview_windows
   flutter_media_session
   flutter_qjs
@@ -26,7 +25,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
-  flutter_discord_rpc_fork
   jni
   libtorrent_flutter
 )

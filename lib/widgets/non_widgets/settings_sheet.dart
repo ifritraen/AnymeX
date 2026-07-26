@@ -45,18 +45,6 @@ class SettingsSheet extends StatelessWidget {
         'icon': 'anilist-icon.png',
         'desc': 'Track anime & manga'
       },
-      {
-        'type': ServicesType.mal,
-        'name': "MyAnimeList",
-        'icon': 'mal-icon.png',
-        'desc': 'The largest database of anime & manga'
-      },
-      {
-        'type': ServicesType.simkl,
-        'name': "Simkl",
-        'icon': 'simkl-icon.png',
-        'desc': 'for movies and series'
-      },
       if (serviceHandler.extensionService.installedExtensions.isNotEmpty &&
           serviceHandler.extensionService.installedMangaExtensions.isNotEmpty)
         {
@@ -354,17 +342,37 @@ class SettingsSheet extends StatelessWidget {
               ],
             ),
           ),
-          AnymexOnTap(
-            onTap: () => snackBar('This feature is not available yet.'),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: theme.surfaceContainerHighest.opaque(0.5),
-                borderRadius: BorderRadius.circular(10),
+          Row(
+            children: [
+              AnymexOnTap(
+                onTap: () {
+                  Get.back();
+                  navigate(() => const ExtensionScreen());
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: theme.surfaceContainerHighest.opaque(0.5),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.extension_rounded,
+                      size: 18, color: theme.primary),
+                ),
               ),
-              child: Icon(Iconsax.notification,
-                  size: 18, color: theme.onSurface.opaque(0.7)),
-            ),
+              const SizedBox(width: 8),
+              AnymexOnTap(
+                onTap: () => snackBar('This feature is not available yet.'),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: theme.surfaceContainerHighest.opaque(0.5),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Iconsax.notification,
+                      size: 18, color: theme.onSurface.opaque(0.7)),
+                ),
+              ),
+            ],
           ),
         ],
       ),

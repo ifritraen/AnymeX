@@ -59,6 +59,7 @@ enum PlayerUiKeys {
   selectedProfile,
   shadersEnabled,
   cacheDays,
+  customColorProfile,
 }
 
 enum ReaderKeys {
@@ -241,6 +242,8 @@ enum PlayerSettingsKeys {
   autoTranslate,
   translateTo,
   autoSkipFiller,
+  cancelSkipDuration,
+  showCancelSkip,
   enableScreenshot,
   subtitleOpacity,
   subtitleBottomMargin,
@@ -251,6 +254,8 @@ enum PlayerSettingsKeys {
   videoOutput,
   audioOutput,
   enableHoldToSeek,
+  holdToSeekSpeed,
+  swipeSeekSensitivity,
 }
 
 enum UISettingsKeys {
@@ -283,6 +288,7 @@ enum UISettingsKeys {
   useGrainTexture,
   grainIntensity,
   enableImmersiveMode,
+  customColorProfile,
 }
 
 enum DownloadKeys {

@@ -77,6 +77,7 @@ class _SearchPageState extends State<SearchPage>
 
   Source? _selectedSource;
   List<ExtensionSearchItem> _extensionSearchItems = [];
+  String _extensionFetchMode = 'popular';
 
   List<Media>? _searchResults;
   ViewMode _currentViewMode = ViewMode.grid;
@@ -127,7 +128,7 @@ class _SearchPageState extends State<SearchPage>
 
     if (!isExtensionMode) {
       prefetchFilterMeta(
-        mediaType: widget.isManga ? 'manga' : 'anime',
+        mediaType: widget.type == ItemType.novel ? 'novel' : (widget.isManga ? 'manga' : 'anime'),
         config: _resolvedFilterConfig(),
       );
     }
@@ -137,7 +138,7 @@ class _SearchPageState extends State<SearchPage>
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _performSearch(filters: _activeFilters);
       });
-    } else if (widget.searchTerm.isNotEmpty) {
+    } else if (widget.searchTerm.isNotEmpty || isExtensionMode) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _performSearch();
       });
@@ -183,6 +184,9 @@ class _SearchPageState extends State<SearchPage>
 
   Map<String, dynamic> _buildApiFilters(String searchQuery) {
     final apiFilters = Map<String, dynamic>.from(_activeFilters);
+    if (widget.type == ItemType.novel) {
+      apiFilters['format'] = 'NOVEL';
+    }
     if (apiFilters['sort'] == null && searchQuery.isEmpty) {
       apiFilters['sort'] = ['POPULARITY_DESC'];
     }
@@ -203,7 +207,7 @@ class _SearchPageState extends State<SearchPage>
     Map<String, dynamic> currentFilters = filters ?? _activeFilters;
     bool hasActiveContent = currentFilters.isNotEmpty;
 
-    if (searchQuery.isEmpty && !isAdult && !hasActiveContent) {
+    if (searchQuery.isEmpty && !isAdult && !hasActiveContent && !isExtensionMode) {
       setState(() {
         _searchState = SearchState.initial;
         _searchResults = null;
@@ -343,7 +347,11 @@ class _SearchPageState extends State<SearchPage>
     }
 
     try {
-      final res = await _selectedSource!.methods.search(searchQuery, 1, []);
+      final res = searchQuery.isNotEmpty
+          ? await _selectedSource!.methods.search(searchQuery, 1, [])
+          : (_extensionFetchMode == 'latest'
+              ? await _selectedSource!.methods.getLatest(1)
+              : await _selectedSource!.methods.getPopular(1));
       final rawList = res.list;
       if (!mounted) return;
 
@@ -390,8 +398,12 @@ class _SearchPageState extends State<SearchPage>
 
     final installed = effectiveType.extensions;
     final items = installed.map((s) {
-      final Future<List<dynamic>> future =
-          s.methods.search(searchQuery, 1, []).then<List<dynamic>>((res) {
+      final Future<List<dynamic>> future = (searchQuery.isNotEmpty
+              ? s.methods.search(searchQuery, 1, [])
+              : (_extensionFetchMode == 'latest'
+                  ? s.methods.getLatest(1)
+                  : s.methods.getPopular(1)))
+          .then<List<dynamic>>((res) {
         return res.list;
       }).catchError((err) {
         return <dynamic>[];
@@ -425,8 +437,12 @@ class _SearchPageState extends State<SearchPage>
     try {
       List<Media> results = [];
       if (_selectedSource != null) {
-        final res = await _selectedSource!.methods
-            .search(_lastSearchQuery, nextPage, []);
+        final res = _lastSearchQuery.isNotEmpty
+            ? await _selectedSource!.methods
+                .search(_lastSearchQuery, nextPage, [])
+            : (_extensionFetchMode == 'latest'
+                ? await _selectedSource!.methods.getLatest(nextPage)
+                : await _selectedSource!.methods.getPopular(nextPage));
         results = res.list
             .map((e) => Media.froDMedia(e, effectiveType))
             .toList();
@@ -581,16 +597,20 @@ class _SearchPageState extends State<SearchPage>
               ? IconButton(
                   onPressed: () {
                     _searchController.clear();
-                    setState(() {
-                      _searchState = SearchState.initial;
-                      _searchResults = null;
-                      _currentPage = 1;
-                      _isLoadingMore = false;
-                      _hasMoreResults = false;
-                      _lastSearchQuery = '';
-                      _lastApiFilters = {};
-                      _extensionSearchItems.clear();
-                    });
+                    if (isExtensionMode) {
+                      _performSearch();
+                    } else {
+                      setState(() {
+                        _searchState = SearchState.initial;
+                        _searchResults = null;
+                        _currentPage = 1;
+                        _isLoadingMore = false;
+                        _hasMoreResults = false;
+                        _lastSearchQuery = '';
+                        _lastApiFilters = {};
+                        _extensionSearchItems.clear();
+                      });
+                    }
                   },
                   icon: Icon(
                     Iconsax.close_circle,
@@ -667,8 +687,87 @@ class _SearchPageState extends State<SearchPage>
                 ),
               ),
             ),
+            if (_searchController.text.trim().isEmpty) ...[
+              const SizedBox(width: 8),
+              Container(
+                decoration: BoxDecoration(
+                  color: context.colors.surfaceContainerHighest.opaque(0.3, iReallyMeanIt: true),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: context.colors.onSurface.opaque(0.08, iReallyMeanIt: true),
+                    width: 0.5,
+                  ),
+                ),
+                padding: const EdgeInsets.all(2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        if (_extensionFetchMode != 'popular') {
+                          setState(() {
+                            _extensionFetchMode = 'popular';
+                          });
+                          _performSearch();
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: _extensionFetchMode == 'popular'
+                              ? context.colors.primary
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          'Popular',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontFamily: 'Poppins-Bold',
+                            fontWeight: FontWeight.bold,
+                            color: _extensionFetchMode == 'popular'
+                                ? context.colors.onPrimary
+                                : context.colors.onSurface.opaque(0.6, iReallyMeanIt: true),
+                          ),
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        if (_extensionFetchMode != 'latest') {
+                          setState(() {
+                            _extensionFetchMode = 'latest';
+                          });
+                          _performSearch();
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: _extensionFetchMode == 'latest'
+                              ? context.colors.primary
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          'Latest',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontFamily: 'Poppins-Bold',
+                            fontWeight: FontWeight.bold,
+                            color: _extensionFetchMode == 'latest'
+                                ? context.colors.onPrimary
+                                : context.colors.onSurface.opaque(0.6, iReallyMeanIt: true),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             if (_selectedSource != null) ...[
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               _buildViewModeToggle(),
             ],
           ] else ...[
@@ -1413,7 +1512,7 @@ class _SearchPageState extends State<SearchPage>
       _performSearch(filters: filters);
     },
         currentFilters: _activeFilters,
-        mediaType: widget.isManga ? 'manga' : 'anime',
+        mediaType: widget.type == ItemType.novel ? 'novel' : (widget.isManga ? 'manga' : 'anime'),
         config: _resolvedFilterConfig());
   }
 

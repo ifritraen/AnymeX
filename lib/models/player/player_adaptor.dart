@@ -36,6 +36,10 @@ class PlayerSettings {
   String videoOutput;
   String audioOutput;
   bool enableHoldToSeek;
+  double holdToSeekSpeed;
+  double swipeSeekSensitivity;
+  int cancelSkipDuration;
+  bool showCancelSkip;
 
   PlayerSettings({
     this.speed = 1.0,
@@ -73,6 +77,10 @@ class PlayerSettings {
     this.videoOutput = 'gpu',
     this.audioOutput = 'auto',
     this.enableHoldToSeek = true,
+    this.holdToSeekSpeed = 2.0,
+    this.swipeSeekSensitivity = 0.80,
+    this.cancelSkipDuration = 5,
+    this.showCancelSkip = true,
   });
 
   factory PlayerSettings.fromDB() {
@@ -151,6 +159,14 @@ class PlayerSettings {
           .get<String>(defaults.audioOutput),
       enableHoldToSeek: PlayerSettingsKeys.enableHoldToSeek
           .get<bool>(defaults.enableHoldToSeek),
+      holdToSeekSpeed: PlayerSettingsKeys.holdToSeekSpeed
+          .get<double>(defaults.holdToSeekSpeed),
+      swipeSeekSensitivity: PlayerSettingsKeys.swipeSeekSensitivity
+          .get<double>(defaults.swipeSeekSensitivity),
+      cancelSkipDuration: PlayerSettingsKeys.cancelSkipDuration
+          .get<int>(defaults.cancelSkipDuration),
+      showCancelSkip: PlayerSettingsKeys.showCancelSkip
+          .get<bool>(defaults.showCancelSkip),
     );
   }
 }

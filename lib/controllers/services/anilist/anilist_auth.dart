@@ -159,10 +159,16 @@ class AnilistAuth extends GetxController {
 
     String clientId = dotenv.env['AL_CLIENT_ID'] ?? '';
     String clientSecret = dotenv.env['AL_CLIENT_SECRET'] ?? '';
+    if (clientId.isEmpty) clientId = '35224';
+
+    final hasSecret = clientSecret.isNotEmpty;
 
     if (selectedMethod == 'browser') {
-      final url =
-          'https://anilist.co/api/v2/oauth/authorize?client_id=$clientId&redirect_uri=anymex://callback&response_type=code';
+      // Code flow needs a registered secret. Fall back to implicit (token) flow
+      // when no secret is present — AniList returns access_token in the fragment.
+      final url = hasSecret
+          ? 'https://anilist.co/api/v2/oauth/authorize?client_id=$clientId&redirect_uri=anymex://callback&response_type=code'
+          : 'https://anilist.co/api/v2/oauth/authorize?client_id=$clientId&response_type=token';
       try {
         final result = await OauthHelper.authenticate(
           context: context,
@@ -170,10 +176,31 @@ class AnilistAuth extends GetxController {
           callbackUrlScheme: 'anymex',
         );
         if (result != null) {
-          final code = Uri.parse(result).queryParameters['code'];
-          if (code != null) {
-            Logger.i("token found");
-            await _exchangeCodeForToken(code, clientId, clientSecret);
+          if (hasSecret) {
+            final code = Uri.parse(result).queryParameters['code'];
+            if (code != null) {
+              Logger.i("token found");
+              await _exchangeCodeForToken(code, clientId, clientSecret);
+            }
+          } else {
+            // Implicit flow: token is in the URL fragment (access_token=...)
+            final token = Uri.splitQueryString(
+                    Uri.parse(result).fragment.isNotEmpty
+                        ? Uri.parse(result).fragment
+                        : result)['access_token'];
+            if (token != null && token.isNotEmpty) {
+              Logger.i("Implicit token found");
+              AuthKeys.authToken.set(token);
+              await fetchUserProfile();
+              await fetchUserAnimeList();
+              await fetchUserMangaList();
+              try {
+                final commentumService = Get.find<CommentumService>();
+                await commentumService.getUserRole();
+              } catch (e) {
+                Logger.i('Error updating commentum role: $e');
+              }
+            }
           }
         }
       } catch (e) {
@@ -1991,11 +2018,12 @@ class AnilistAuth extends GetxController {
           final animeListt =
               lists.expand((list) => list['entries'] as List<dynamic>).toList();
 
+          animeListt.sort((a, b) => ((b['updatedAt'] as int? ?? 0))
+              .compareTo((a['updatedAt'] as int? ?? 0)));
+
           currentlyWatching.value = animeListt
               .where((animeEntry) => animeEntry['status'] == 'CURRENT')
               .map((animeEntry) => TrackedMedia.fromJson(animeEntry))
-              .toList()
-              .reversed
               .toList()
               .removeDupes();
 
@@ -2003,8 +2031,6 @@ class AnilistAuth extends GetxController {
 
           animeList.value = animeListt
               .map((animeEntry) => TrackedMedia.fromJson(animeEntry))
-              .toList()
-              .reversed
               .toList()
               .removeDupes();
           Logger.i("Anime List Fetched Successfully!");
@@ -2294,20 +2320,19 @@ class AnilistAuth extends GetxController {
           final animeListt =
               lists.expand((list) => list['entries'] as List<dynamic>).toList();
 
+          animeListt.sort((a, b) => ((b['updatedAt'] as int? ?? 0))
+              .compareTo((a['updatedAt'] as int? ?? 0)));
+
           currentlyReading.value = animeListt
               .where((animeEntry) =>
                   animeEntry['status'] == 'CURRENT' ||
                   animeEntry['status'] == 'REPEATING')
               .map((animeEntry) => TrackedMedia.fromJson(animeEntry))
               .toList()
-              .reversed
-              .toList()
               .removeDupes();
 
           mangaList.value = animeListt
               .map((animeEntry) => TrackedMedia.fromJson(animeEntry))
-              .toList()
-              .reversed
               .toList()
               .removeDupes();
         } else {

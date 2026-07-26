@@ -200,7 +200,7 @@ class _DoubleTapSeekWidgetState extends State<DoubleTapSeekWidget>
       if (mounted && !_isDragging && _longPressStarted) {
         setState(() {
           _isHolding = true;
-          _currentSpeed = 2.0;
+          _currentSpeed = widget.controller.playerSettings.holdToSeekSpeed;
         });
 
         widget.controller.toggleControls(val: false);
@@ -308,7 +308,7 @@ class _DoubleTapSeekWidgetState extends State<DoubleTapSeekWidget>
     if (widget.controller.isLocked.value) return;
 
     final screenWidth = MediaQuery.of(context).size.width;
-    const sensitivity = 0.80;
+    final sensitivity = widget.controller.playerSettings.swipeSeekSensitivity;
     final totalMs = widget.controller.episodeDuration.value.inMilliseconds;
     if (totalMs <= 0) return;
 
@@ -325,7 +325,7 @@ class _DoubleTapSeekWidgetState extends State<DoubleTapSeekWidget>
       _dragCurrentPosition = newPosition;
     });
 
-    widget.controller.seekTo(newPosition);
+    widget.controller.seekToInstant(newPosition);
   }
 
   void _onHorizontalDragEnd(DragEndDetails details) {
@@ -344,14 +344,21 @@ class _DoubleTapSeekWidgetState extends State<DoubleTapSeekWidget>
     if (widget.controller.isLocked.value) return;
     if (!_isHolding) return;
 
-    const double maxSwipeDistance = 100.0;
-    const double minSpeed = 2.0;
+    const double maxSwipeDistance = 150.0;
+    const double minSpeed = 0.25;
+    final double baseSpeed = widget.controller.playerSettings.holdToSeekSpeed;
     const double maxSpeed = 5.0;
 
-    double normalizedDelta = (-deltaY / maxSwipeDistance).clamp(0.0, 1.0);
-    double newSpeed = minSpeed + (normalizedDelta * (maxSpeed - minSpeed));
+    double newSpeed;
+    if (deltaY < 0) {
+      double normalizedDelta = (-deltaY / maxSwipeDistance).clamp(0.0, 1.0);
+      newSpeed = baseSpeed + (normalizedDelta * (maxSpeed - baseSpeed));
+    } else {
+      double normalizedDelta = (deltaY / maxSwipeDistance).clamp(0.0, 1.0);
+      newSpeed = baseSpeed - (normalizedDelta * (baseSpeed - minSpeed));
+    }
 
-    newSpeed = (newSpeed * 2).round() / 2;
+    newSpeed = (newSpeed * 4).round() / 4;
     newSpeed = newSpeed.clamp(minSpeed, maxSpeed);
 
     if (newSpeed != _currentSpeed) {
@@ -434,7 +441,7 @@ class _DoubleTapSeekWidgetState extends State<DoubleTapSeekWidget>
                       child: FractionallySizedBox(
                         alignment: Alignment.centerLeft,
                         widthFactor:
-                            ((_currentSpeed - 2.0) / 3.0).clamp(0.0, 1.0),
+                            ((_currentSpeed - widget.controller.playerSettings.holdToSeekSpeed) / (5.0 - widget.controller.playerSettings.holdToSeekSpeed)).clamp(0.0, 1.0),
                         child: Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(20),
@@ -566,15 +573,36 @@ class _DoubleTapSeekWidgetState extends State<DoubleTapSeekWidget>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
-                                  PlayerUtils.formatDuration(
-                                      _dragCurrentPosition),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.labelLarge?.copyWith(
-                                    color: colorScheme.onSurface,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                Row(
+                                  children: [
+                                    Text(
+                                      PlayerUtils.formatDuration(
+                                          _dragCurrentPosition),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: theme.textTheme.labelLarge?.copyWith(
+                                        color: colorScheme.onSurface,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Builder(builder: (context) {
+                                      final diffSec = (_dragCurrentPosition
+                                                  .inSeconds -
+                                              _dragStartPlayerPosition.inSeconds);
+                                      if (diffSec == 0) return const SizedBox.shrink();
+                                      final sign = diffSec > 0 ? '+' : '';
+                                      return Text(
+                                        '($sign${diffSec}s)',
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          color: diffSec > 0
+                                              ? colorScheme.primary
+                                              : colorScheme.error,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      );
+                                    }),
+                                  ],
                                 ),
                                 const SizedBox(height: 1),
                                 Text(

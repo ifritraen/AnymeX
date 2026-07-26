@@ -468,16 +468,16 @@ class Header extends StatelessWidget {
     }
   }
 
-  AnymexOnTap _profileIcon(BuildContext context, ServiceHandler profileData) {
-    return AnymexOnTap(
+  Widget _profileIcon(BuildContext context, ServiceHandler profileData) {
+    return InkWell(
       onTap: () => SettingsSheet.show(context),
-      child: GestureDetector(
-        onLongPress: () {
-          if (profileData.isLoggedIn.value) {
-            navigate(() => const ProfilePage());
-          }
-        },
-        child: Obx(() {
+      onLongPress: () {
+        if (profileData.isLoggedIn.value) {
+          navigate(() => const ProfilePage());
+        }
+      },
+      borderRadius: BorderRadius.circular(50),
+      child: Obx(() {
           final count = Get.find<SourceController>().extensionUpdatesCount.value;
           final avatar = CircleAvatar(
             radius: 20,
@@ -507,7 +507,6 @@ class Header extends StatelessWidget {
           }
           return avatar;
         }),
-      ),
     );
   }
 

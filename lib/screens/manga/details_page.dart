@@ -677,9 +677,7 @@ class _MangaDetailsPageState extends State<MangaDetailsPage> {
       color: posterColor,
       child: Scaffold(
           extendBody: true,
-          bottomNavigationBar: sourceController.shouldShowExtensions.value
-              ? _buildMobiledNav()
-              : null,
+          bottomNavigationBar: _buildMobiledNav(),
           body: _commonSaikouLayout(context)),
     );
   }

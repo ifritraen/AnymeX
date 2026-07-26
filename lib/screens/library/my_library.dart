@@ -29,6 +29,10 @@ import 'package:anymex/widgets/common/scroll_aware_app_bar.dart';
 import 'package:anymex/widgets/header.dart';
 import 'package:flutter/services.dart';
 
+import 'package:anymex/controllers/service_handler/service_handler.dart';
+import 'package:anymex/widgets/common/installed_extensions_gridview.dart';
+import 'package:anymex/widgets/custom_widgets/anymex_tabbar.dart';
+
 class MyLibrary extends StatefulWidget {
   const MyLibrary({super.key});
 
@@ -62,24 +66,33 @@ class _MyLibraryState extends State<MyLibrary>
   Widget build(BuildContext context) {
     super.build(context);
     final controller = Get.put(LibraryController());
-    final statusBarHeight = MediaQuery.of(context).padding.top;
-    const appBarHeight = kToolbarHeight + 20;
+    final serviceHandler = Get.find<ServiceHandler>();
+    final sourceController = Get.find<SourceController>();
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      body: Stack(
-        children: [
-          CustomScrollView(
-            controller: _scrollController,
-            slivers: [
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          controller: _scrollController,
+            if (serviceHandler.serviceType.value == ServicesType.extensions)
               SliverToBoxAdapter(
-                child: SizedBox(
-                  height: statusBarHeight + appBarHeight,
-                ),
-              ),
+                child: Obx(() {
+                  final itemType = controller.type.value;
+                  final sources = itemType == ItemType.manga
+                      ? sourceController.installedMangaExtensions
+                      : itemType == ItemType.novel
+                          ? sourceController.installedNovelExtensions
+                          : sourceController.installedExtensions;
+                  return InstalledExtensionsGridView(
+                    sources: sources,
+                    itemType: itemType,
+                  );
+                }),
+              )
+            else ...[
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+                  padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
                   child: LibrarySegmentedControl(controller: controller),
                 ),
               ),
@@ -88,32 +101,8 @@ class _MyLibraryState extends State<MyLibrary>
               ),
               _LibraryContent(controller: controller),
             ],
-          ),
-          CustomAnimatedAppBar(
-            isVisible: _isAppBarVisibleExternally,
-            scrollController: _scrollController,
-            headerContent: const Header(type: PageType.library),
-            visibleStatusBarStyle: SystemUiOverlayStyle(
-              statusBarIconBrightness:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Brightness.dark
-                      : Brightness.light,
-              statusBarBrightness: Theme.of(context).brightness,
-              statusBarColor: Colors.transparent,
-            ),
-            hiddenStatusBarStyle: SystemUiOverlayStyle(
-              statusBarIconBrightness:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Brightness.light
-                      : Brightness.dark,
-              statusBarBrightness:
-                  Theme.of(context).brightness == Brightness.light
-                      ? Brightness.dark
-                      : Brightness.light,
-              statusBarColor: Colors.transparent,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

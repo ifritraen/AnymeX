@@ -2075,6 +2075,24 @@ class _SettingsPlayerState extends State<SettingsPlayer> with TickerProviderStat
                                       settings.autoSkipFiller = val),
                               CustomSwitchTile(
                                   padding: const EdgeInsets.all(10),
+                                  icon: Icons.cancel_outlined,
+                                  title: "Show Cancel Skip Button",
+                                  description: "Show button to cancel auto-skip countdown",
+                                  switchValue: settings.showCancelSkip,
+                                  onChanged: (val) =>
+                                      settings.showCancelSkip = val),
+                              CustomSliderTile(
+                                  icon: Icons.timer_outlined,
+                                  title: "Cancel Skip Duration",
+                                  description: "Duration to wait before auto skipping (seconds)",
+                                  sliderValue: settings.cancelSkipDuration.toDouble(),
+                                  min: 1,
+                                  max: 15,
+                                  divisions: 14,
+                                  onChanged: (val) =>
+                                      settings.cancelSkipDuration = val.round()),
+                              CustomSwitchTile(
+                                  padding: const EdgeInsets.all(10),
                                   icon: Icons.play_disabled_rounded,
                                   title: "Enable Swipe Controls",
                                   description:
@@ -2082,6 +2100,24 @@ class _SettingsPlayerState extends State<SettingsPlayer> with TickerProviderStat
                                   switchValue: settings.enableSwipeControls,
                                   onChanged: (val) =>
                                       settings.enableSwipeControls = val),
+                              if (settings.enableSwipeControls)
+                                CustomSliderTile(
+                                  icon: Icons.swipe_rounded,
+                                  title: "Horizontal Swipe Sensitivity",
+                                  description:
+                                      "Adjust sensitivity for horizontal swipe seeking",
+                                  sliderValue: settings.swipeSeekSensitivity,
+                                  min: 0.1,
+                                  max: 2.0,
+                                  divisions: 19,
+                                  label:
+                                      "${settings.swipeSeekSensitivity.toStringAsFixed(2)}x",
+                                  onChanged: (val) {
+                                    settings.swipeSeekSensitivity =
+                                        (val * 20).round() / 20;
+                                    setState(() {});
+                                  },
+                                ),
                               CustomSwitchTile(
                                   padding: const EdgeInsets.all(10),
                                   icon: Icons.gesture_rounded,
@@ -2091,6 +2127,21 @@ class _SettingsPlayerState extends State<SettingsPlayer> with TickerProviderStat
                                   switchValue: settings.enableHoldToSeek,
                                   onChanged: (val) =>
                                       settings.enableHoldToSeek = val),
+                              if (settings.enableHoldToSeek)
+                                CustomSliderTile(
+                                  icon: Icons.speed_rounded,
+                                  title: "Long Tap Speed",
+                                  description: "Initial playback speed when long-pressing screen (Drag up to increase, down to decrease)",
+                                  sliderValue: settings.holdToSeekSpeed,
+                                  min: 0.5,
+                                  max: 5.0,
+                                  divisions: 18,
+                                  label: "${settings.holdToSeekSpeed.toStringAsFixed(2)}x",
+                                  onChanged: (val) {
+                                    settings.holdToSeekSpeed = (val * 4).round() / 4;
+                                    setState(() {});
+                                  },
+                                ),
                               CustomSwitchTile(
                                   padding: const EdgeInsets.all(10),
                                   icon: Icons.screenshot_rounded,

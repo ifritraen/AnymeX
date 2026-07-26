@@ -21,6 +21,7 @@ import 'package:anymex/models/player/player_adaptor.dart';
 import 'package:anymex/screens/anime/watch/controller/player_utils.dart';
 import 'package:anymex/utils/external_player.dart';
 import 'package:anymex/utils/pip_controller.dart';
+import 'package:anymex/screens/anime/widgets/comments/controller/comment_preloader.dart';
 import 'package:anymex/screens/anime/watch/controls/widgets/bottom_sheet.dart';
 import 'package:anymex/screens/anime/watch/player/base_player.dart';
 import 'package:anymex/screens/anime/watch/player/media_kit_player.dart';
@@ -369,6 +370,11 @@ class PlayerController extends GetxController with WidgetsBindingObserver {
   @override
   void onInit() {
     super.onInit();
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
+    if (Get.isRegistered<CommentPreloader>()) {
+      Get.find<CommentPreloader>().clearAll();
+    }
     PlayerController.initializePlayerControlsIfNeeded(settings);
     WidgetsBinding.instance.addObserver(this);
     _initDatabaseVars();
@@ -583,7 +589,7 @@ class PlayerController extends GetxController with WidgetsBindingObserver {
     final savedProfile =
         PlayerUiKeys.currentVisualProfile.get<String>('natural').toLowerCase();
     currentVisualProfile.value =
-        ColorProfileManager.profiles.containsKey(savedProfile)
+        (ColorProfileManager.profiles.containsKey(savedProfile) || savedProfile == 'custom')
             ? savedProfile
             : 'natural';
     customSettings.value = _loadVisualSettings();
@@ -621,14 +627,15 @@ class PlayerController extends GetxController with WidgetsBindingObserver {
 
   Future<void> _initOrientations() async {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    _initPhysicalOrientationListener();
-
     if (Platform.isAndroid || Platform.isIOS) {
       if (playerSettings.defaultPortraitMode) {
         _applyOrientation(DeviceOrientation.portraitUp);
       } else {
-        final orientation = await _getClosestLandscapeOrientation();
-        _applyOrientation(orientation);
+        SystemChrome.setPreferredOrientations([
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ]);
+        currentOrientation.value = DeviceOrientation.landscapeLeft;
       }
     }
   }
@@ -698,14 +705,8 @@ class PlayerController extends GetxController with WidgetsBindingObserver {
   }
 
   void toggleOrientation() {
-    if (currentOrientation.value != physicalOrientation.value) {
-      _applyOrientation(physicalOrientation.value);
-      return;
-    }
     DeviceOrientation next;
     if (currentOrientation.value == DeviceOrientation.landscapeLeft) {
-      next = DeviceOrientation.portraitUp;
-    } else if (currentOrientation.value == DeviceOrientation.portraitUp) {
       next = DeviceOrientation.landscapeRight;
     } else {
       next = DeviceOrientation.landscapeLeft;
@@ -737,8 +738,12 @@ class PlayerController extends GetxController with WidgetsBindingObserver {
       _cancelAutoSkipTimer();
       return;
     }
+    if (!playerSettings.showCancelSkip || playerSettings.cancelSkipDuration <= 0) {
+      _performSegmentSkip(interval);
+      return;
+    }
     if (_autoSkipCountdownTimer != null) return;
-    autoSkipCountdownRemaining.value = autoSkipCountdownSeconds;
+    autoSkipCountdownRemaining.value = playerSettings.cancelSkipDuration;
     _autoSkipCountdownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (currentSkipInterval.value != interval) {
         _cancelAutoSkipTimer();
@@ -1801,6 +1806,11 @@ class PlayerController extends GetxController with WidgetsBindingObserver {
     _seekDebounce = Timer(const Duration(milliseconds: 100), () {
       _seekTo(pos);
     });
+  }
+
+  void seekToInstant(Duration pos) {
+    currentPosition.value = pos;
+    _seekTo(pos);
   }
 
   void _seekTo(Duration pos) async => await _basePlayer.seek(pos);

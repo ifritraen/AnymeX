@@ -612,6 +612,18 @@ class Settings extends GetxController {
     PlayerSettingsKeys.autoSkipRecap.set(value);
   }
 
+  int get cancelSkipDuration => _getPlayerSetting((s) => s.cancelSkipDuration);
+  set cancelSkipDuration(int value) {
+    playerSettings.update((s) => s?.cancelSkipDuration = value);
+    PlayerSettingsKeys.cancelSkipDuration.set(value);
+  }
+
+  bool get showCancelSkip => _getPlayerSetting((s) => s.showCancelSkip);
+  set showCancelSkip(bool value) {
+    playerSettings.update((s) => s?.showCancelSkip = value);
+    PlayerSettingsKeys.showCancelSkip.set(value);
+  }
+
   bool get autoSkipFiller => _getPlayerSetting((s) => s.autoSkipFiller);
   set autoSkipFiller(bool value) {
     playerSettings.update((s) => s?.autoSkipFiller = value);
@@ -628,6 +640,19 @@ class Settings extends GetxController {
   set enableHoldToSeek(bool value) {
     playerSettings.update((s) => s?.enableHoldToSeek = value);
     PlayerSettingsKeys.enableHoldToSeek.set(value);
+  }
+
+  double get holdToSeekSpeed => _getPlayerSetting((s) => s.holdToSeekSpeed);
+  set holdToSeekSpeed(double value) {
+    playerSettings.update((s) => s?.holdToSeekSpeed = value);
+    PlayerSettingsKeys.holdToSeekSpeed.set(value);
+  }
+
+  double get swipeSeekSensitivity =>
+      _getPlayerSetting((s) => s.swipeSeekSensitivity);
+  set swipeSeekSensitivity(double value) {
+    playerSettings.update((s) => s?.swipeSeekSensitivity = value);
+    PlayerSettingsKeys.swipeSeekSensitivity.set(value);
   }
 
   bool get playerMenuAnimation =>

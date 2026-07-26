@@ -17,6 +17,7 @@ import 'package:anymex_extension_runtime_bridge/Models/Source.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:anymex/widgets/header.dart';
 import 'package:flutter_iconly/flutter_iconly.dart';
 import 'package:iconsax/iconsax.dart';
 
@@ -368,6 +369,24 @@ class ChipTabs extends StatelessWidget {
                           () => CustomListsEditor(type: controller.type.value)),
                       icon: Icon(
                         Iconsax.edit,
+                        size: 16,
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                    ),
+                    _buildCustomPill(
+                      context: context,
+                      label: 'Sort',
+                      isSelected: false,
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          backgroundColor: Colors.transparent,
+                          isScrollControlled: true,
+                          builder: (context) => LibrarySettingsSheet(controller: controller),
+                        );
+                      },
+                      icon: Icon(
+                        Iconsax.setting_4,
                         size: 16,
                         color: context.colors.onSurfaceVariant,
                       ),

@@ -139,10 +139,11 @@ class BottomControls extends StatelessWidget {
       final isCountdownActive = controller.isAutoSkipCountdownActive;
       final interval = controller.currentSkipInterval.value;
       final inSegment = interval != null || isCountdownActive;
+      final totalSecs = controller.playerSettings.cancelSkipDuration > 0
+          ? controller.playerSettings.cancelSkipDuration
+          : 5;
       final progress = isCountdownActive
-          ? 1.0 -
-              (controller.autoSkipCountdownRemaining.value /
-                  PlayerController.autoSkipCountdownSeconds)
+          ? 1.0 - (controller.autoSkipCountdownRemaining.value / totalSecs)
           : 0.0;
 
       return Material(

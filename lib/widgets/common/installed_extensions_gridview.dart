@@ -2,6 +2,7 @@ import 'package:anymex/controllers/source/source_controller.dart';
 import 'package:anymex/screens/search/source_search_page.dart';
 import 'package:anymex/utils/function.dart';
 import 'package:anymex/utils/theme_extensions.dart';
+import 'package:anymex/widgets/common/future_reusable_carousel.dart';
 import 'package:anymex/widgets/common/search_bar.dart';
 import 'package:anymex/widgets/custom_widgets/anymex_image.dart';
 import 'package:anymex/widgets/custom_widgets/custom_text.dart';
@@ -44,18 +45,8 @@ class _InstalledExtensionsGridViewState
     super.dispose();
   }
 
-  int _calculateCrossAxisCount(double width) {
-    if (width > 1200) return 4;
-    if (width > 700) return 3;
-    if (width > 400) return 2;
-    return 1;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final crossAxisCount = _calculateCrossAxisCount(screenWidth);
-
     final filteredSources = widget.sources.where((s) {
       if (_searchQuery.trim().isEmpty) return true;
       final q = _searchQuery.trim().toLowerCase();
@@ -138,19 +129,14 @@ class _InstalledExtensionsGridViewState
           if (filteredSources.isEmpty)
             _buildEmptyState(context, title)
           else
-            GridView.builder(
+            ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: filteredSources.length,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                mainAxisExtent: 110,
-              ),
+              separatorBuilder: (context, index) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
                 final source = filteredSources[index];
-                return _ExtensionCard(
+                return _ExtensionSection(
                   source: source,
                   itemType: widget.itemType,
                 );
@@ -216,11 +202,11 @@ class _InstalledExtensionsGridViewState
   }
 }
 
-class _ExtensionCard extends StatelessWidget {
+class _ExtensionSection extends StatelessWidget {
   final Source source;
   final ItemType itemType;
 
-  const _ExtensionCard({
+  const _ExtensionSection({
     required this.source,
     required this.itemType,
   });
@@ -230,26 +216,118 @@ class _ExtensionCard extends StatelessWidget {
     final theme = Theme.of(context);
     final sourceController = Get.find<SourceController>();
 
-    return AnymexOnTap(
-      scale: 0.98,
-      onTap: () {
-        sourceController.setActiveSource(source);
-        navigateWithAnimation(() => SourceSearchPage(
-              initialTerm: '',
-              type: itemType,
-              source: source,
-            ));
-      },
-      child: Container(
-        padding: const EdgeInsets.all(12.0),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest
-              .opaque(0.35, iReallyMeanIt: true),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color:
-                theme.colorScheme.onSurface.opaque(0.08, iReallyMeanIt: true),
-            width: 0.5,
+    final Future<List<dynamic>> latestFuture =
+        source.methods.getLatest(1).then<List<dynamic>>((res) => res.list).catchError((_) => <dynamic>[]);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
+          child: Row(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: theme.colorScheme.onSurface
+                        .opaque(0.08, iReallyMeanIt: true),
+                    width: 0.8,
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(11),
+                  child: AnymeXImage(
+                    width: 32,
+                    height: 32,
+                    imageUrl: source.iconUrl ?? '',
+                    errorImage: '',
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      source.name ?? 'Unknown',
+                      style: TextStyle(
+                        fontFamily: 'Poppins-SemiBold',
+                        fontSize: 15,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              if (source.lang != null) ...[
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary
+                        .opaque(0.15, iReallyMeanIt: true),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    source.lang!.toUpperCase(),
+                    style: TextStyle(
+                      fontFamily: 'Poppins-SemiBold',
+                      fontSize: 10,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              AnymexOnTap(
+                scale: 0.95,
+                onTap: () {
+                  sourceController.setActiveSource(source);
+                  navigateWithAnimation(() => SourceSearchPage(
+                        initialTerm: '',
+                        type: itemType,
+                        source: source,
+                      ));
+                },
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest
+                        .opaque(0.4, iReallyMeanIt: true),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: theme.colorScheme.onSurface
+                          .opaque(0.08, iReallyMeanIt: true),
+                      width: 0.5,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'View All',
+                        style: TextStyle(
+                          fontFamily: 'Poppins-Medium',
+                          fontSize: 12,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        IconlyLight.arrowRight,
+                        size: 12,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         child: Row(
@@ -342,7 +420,7 @@ class _ExtensionCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
+      ],
     );
   }
 }

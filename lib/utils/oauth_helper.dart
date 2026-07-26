@@ -105,7 +105,8 @@ class _OauthWebViewPageState extends State<OauthWebViewPage> {
           if (url != null) {
             final urlString = url.toString();
             if (urlString.startsWith('${widget.callbackUrlScheme}://') ||
-                urlString.contains('code=')) {
+                urlString.contains('code=') ||
+                urlString.contains('access_token=')) {
               if (!_finished) {
                 _finished = true;
                 Navigator.pop(context, urlString);
@@ -118,7 +119,8 @@ class _OauthWebViewPageState extends State<OauthWebViewPage> {
           if (url != null) {
             final urlString = url.toString();
             if (urlString.startsWith('${widget.callbackUrlScheme}://') ||
-                urlString.contains('code=')) {
+                urlString.contains('code=') ||
+                urlString.contains('access_token=')) {
               if (!_finished) {
                 _finished = true;
                 Navigator.pop(context, urlString);

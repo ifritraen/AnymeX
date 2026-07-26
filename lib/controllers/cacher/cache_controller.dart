@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:anymex/controllers/service_handler/service_handler.dart';
+import 'package:anymex/database/kv_helper.dart';
 import 'package:anymex/models/Media/media.dart';
 import 'package:anymex/utils/logger.dart';
 import 'package:anymex_extension_runtime_bridge/anymex_extension_runtime_bridge.dart';
@@ -15,6 +16,44 @@ class CacheController extends GetxController {
   RxList<String> cachedExtensionData = <String>[].obs;
 
   RxString detailsData = ''.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _loadPersistedCache();
+  }
+
+  void _loadPersistedCache() {
+    try {
+      cachedAnilistData.assignAll(KvHelper.get<List<dynamic>>('cache_anilist', defaultVal: []).cast<String>());
+      cachedMalData.assignAll(KvHelper.get<List<dynamic>>('cache_mal', defaultVal: []).cast<String>());
+      cachedSimklData.assignAll(KvHelper.get<List<dynamic>>('cache_simkl', defaultVal: []).cast<String>());
+      cachedExtensionData.assignAll(KvHelper.get<List<dynamic>>('cache_extension', defaultVal: []).cast<String>());
+    } catch (e) {
+      Logger.e('Error loading persisted cache: $e');
+    }
+  }
+
+  void _savePersistedCache() {
+    try {
+      final service = Get.find<ServiceHandler>().serviceType;
+      switch (service.value) {
+        case ServicesType.anilist:
+          KvHelper.set('cache_anilist', cachedAnilistData.toList());
+          break;
+        case ServicesType.mal:
+          KvHelper.set('cache_mal', cachedMalData.toList());
+          break;
+        case ServicesType.simkl:
+          KvHelper.set('cache_simkl', cachedSimklData.toList());
+          break;
+        default:
+          KvHelper.set('cache_extension', cachedExtensionData.toList());
+      }
+    } catch (e) {
+      Logger.e('Error saving persisted cache: $e');
+    }
+  }
 
   RxList<String> get currentPool => getCacheContainer();
 
@@ -52,6 +91,7 @@ class CacheController extends GetxController {
         currentPool.add(encodedData);
       }
     }
+    _savePersistedCache();
   }
 
   List<Media> getStoredAnime() {
@@ -64,8 +104,12 @@ class CacheController extends GetxController {
 
   Media? getCacheById(String id) {
     final pool = getCacheContainer();
-    final data = pool.map((e) => cacheDataParser(e)).toList();
-    return data.firstWhereOrNull((e) => e.id == id);
+    final item = pool.firstWhereOrNull(
+        (e) => e.contains('"id":$id') || e.contains('"id":"$id"'));
+    if (item != null) {
+      return cacheDataParser(item);
+    }
+    return null;
   }
 
   Media cacheDataParser(String data) {

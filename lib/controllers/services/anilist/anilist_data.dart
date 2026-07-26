@@ -67,6 +67,11 @@ class AnilistData extends GetxController implements BaseService, OnlineService {
   RxList<Media> trendingMangas = <Media>[].obs;
 
   // Novel Data
+  RxList<Media> trendingNovels = <Media>[].obs;
+  RxList<Media> popularNovels = <Media>[].obs;
+  RxList<Media> latestNovels = <Media>[].obs;
+  RxList<Media> upcomingNovels = <Media>[].obs;
+  RxList<Media> topRatedNovels = <Media>[].obs;
   RxList<DMedia> novelData = <DMedia>[].obs;
 
   Media? _firstMediaWithCover(Iterable<Media> mediaList) {
@@ -289,6 +294,18 @@ class AnilistData extends GetxController implements BaseService, OnlineService {
                   type: ItemType.manga,
                 )));
       }),
+    ].obs;
+  }
+
+  RxList<Widget> novelWidgets(BuildContext context) {
+    return [
+      if (trendingNovels.isNotEmpty) buildBigCarousel(trendingNovels, true),
+      if (latestNovels.isNotEmpty) buildMangaSection('Latest Light Novels', latestNovels),
+      if (trendingNovels.isNotEmpty) buildMangaSection('Trending Light Novels', trendingNovels),
+      if (popularNovels.isNotEmpty) buildMangaSection('Popular Light Novels', popularNovels),
+      if (upcomingNovels.isNotEmpty) buildMangaSection('Upcoming Light Novels', upcomingNovels),
+      if (topRatedNovels.isNotEmpty) buildMangaSection('Highest Scored Light Novels', topRatedNovels),
+      ...sourceController.novelSections,
     ].obs;
   }
 
@@ -606,6 +623,99 @@ averageScore
 averageScore
       }
     }
+
+    # Trending Novels (Page 1)
+    trendingNovels: Page(page: 1, perPage: \$perPage) {
+      media(sort: TRENDING_DESC, type: MANGA, format: NOVEL) {
+        id
+        title {
+          userPreferred
+          romaji
+          english
+          native
+        }
+        description
+        bannerImage
+        coverImage {
+          large
+          extraLarge
+        }
+        type
+averageScore
+      }
+    }
+
+    # Popular Novels (Page 1)
+    popularNovels: Page(page: 1, perPage: \$perPage) {
+      media(sort: POPULARITY_DESC, type: MANGA, format: NOVEL) {
+        id
+        title {
+          userPreferred
+          romaji
+          english
+          native
+        }
+        coverImage {
+          large
+        }
+        type
+averageScore
+      }
+    }
+
+    # Latest Novels (Page 1)
+    latestNovels: Page(page: 1, perPage: \$perPage) {
+      media(sort: START_DATE_DESC, type: MANGA, format: NOVEL, chapters_greater: 0) {
+        id
+        title {
+          userPreferred
+          romaji
+          english
+          native
+        }
+        coverImage {
+          large
+        }
+        type
+averageScore
+      }
+    }
+
+    # Upcoming Novels (Page 1)
+    upcomingNovels: Page(page: 1, perPage: \$perPage) {
+      media(status: NOT_YET_RELEASED, sort: START_DATE_DESC, type: MANGA, format: NOVEL) {
+        id
+        title {
+          userPreferred
+          romaji
+          english
+          native
+        }
+        coverImage {
+          large
+        }
+        type
+averageScore
+      }
+    }
+
+    # Top Rated Novels (Page 1)
+    topRatedNovels: Page(page: 1, perPage: \$perPage) {
+      media(sort: SCORE_DESC, type: MANGA, format: NOVEL) {
+        id
+        title {
+          userPreferred
+          romaji
+          english
+          native
+        }
+        coverImage {
+          large
+        }
+        type
+averageScore
+      }
+    }
   }
 ''';
 
@@ -644,6 +754,26 @@ averageScore
           parseMediaList(responseData['topOngoing']['media']);
       trendingMangas.value =
           parseMediaList(responseData['trendingManga']['media']);
+      if (responseData['trendingNovels'] != null) {
+        trendingNovels.value =
+            parseMediaList(responseData['trendingNovels']['media']);
+      }
+      if (responseData['popularNovels'] != null) {
+        popularNovels.value =
+            parseMediaList(responseData['popularNovels']['media']);
+      }
+      if (responseData['latestNovels'] != null) {
+        latestNovels.value =
+            parseMediaList(responseData['latestNovels']['media']);
+      }
+      if (responseData['upcomingNovels'] != null) {
+        upcomingNovels.value =
+            parseMediaList(responseData['upcomingNovels']['media']);
+      }
+      if (responseData['topRatedNovels'] != null) {
+        topRatedNovels.value =
+            parseMediaList(responseData['topRatedNovels']['media']);
+      }
     } else {
       throw Exception(
           'Failed to load AniList manga data: ${response.statusCode}');

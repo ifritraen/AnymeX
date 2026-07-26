@@ -21,7 +21,8 @@ import 'package:anymex/widgets/helper/platform_builder.dart';
 import 'package:anymex/widgets/history/tap_history_cards.dart';
 import 'package:anymex/widgets/non_widgets/snackbar.dart';
 import 'package:anymex_extension_runtime_bridge/Models/Source.dart';
-import 'package:anymex/database/data_keys/keys.dart';
+import 'package:anymex/widgets/common/installed_extensions_gridview.dart';
+import 'package:anymex/widgets/custom_widgets/anymex_tabbar.dart';
 import 'package:anymex/widgets/custom_widgets/anymex_dialog.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -210,6 +211,8 @@ class _HomePageState extends State<HomePage> {
     ];
   }
 
+  int _selectedSubTab = 0;
+
   @override
   void initState() {
     super.initState();
@@ -256,118 +259,104 @@ class _HomePageState extends State<HomePage> {
         return serviceHandler.refresh();
       },
       child: Scaffold(
-        extendBodyBehindAppBar: true,
-        body: Stack(
-          children: [
-            SingleChildScrollView(
-              controller: _scrollController,
-              child: Column(
-                crossAxisAlignment: isMobile
-                    ? CrossAxisAlignment.center
-                    : CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    height: isDesktop ? 10 : statusBarHeight + appBarHeight,
-                  ),
-                  const SizedBox(height: 10),
-                  Obx(
-                    () => Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                      child: AnymexTextSpans(
-                        fontSize: 27,
-                        spans: [
-                          const AnymexTextSpan(
-                              text: 'Hey ',
-                              size: 30,
-                              variant: TextVariant.bold),
-                          AnymexTextSpan(
-                              text:
-                                  '${serviceHandler.isLoggedIn.value ? serviceHandler.profileData.value.name : 'Guest'}',
-                              size: 30,
-                              color: context.colors.primary,
-                              variant: TextVariant.bold),
-                          const AnymexTextSpan(
-                              text: ', what are we doing today?',
-                              size: 30,
-                              variant: TextVariant.bold),
-                        ],
-                        textAlign: textAlignment,
-                      ),
+        body: SafeArea(
+          bottom: false,
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            child: Column(
+              crossAxisAlignment: isMobile
+                  ? CrossAxisAlignment.center
+                  : CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 10),
+                Obx(
+                  () => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: AnymexTextSpans(
+                      fontSize: 27,
+                      spans: [
+                        const AnymexTextSpan(
+                            text: 'Hey ',
+                            size: 30,
+                            variant: TextVariant.bold),
+                        AnymexTextSpan(
+                            text:
+                                '${serviceHandler.isLoggedIn.value ? serviceHandler.profileData.value.name : 'Guest'}',
+                            size: 30,
+                            color: context.colors.primary,
+                            variant: TextVariant.bold),
+                        const AnymexTextSpan(
+                            text: ', what are we doing today?',
+                            size: 30,
+                            variant: TextVariant.bold),
+                      ],
+                      textAlign: textAlignment,
                     ),
                   ),
-                  Column(
+                ),
+                Obx(() {
+                  if (serviceHandler.serviceType.value == ServicesType.extensions) {
+                    return Column(
+                      children: [
+                        InstalledExtensionsGridView(
+                          sources: sourceController.installedExtensions.value,
+                          itemType: ItemType.anime,
+                        ),
+                        const SizedBox(height: 20),
+                        InstalledExtensionsGridView(
+                          sources: sourceController.installedMangaExtensions.value,
+                          itemType: ItemType.manga,
+                        ),
+                      ],
+                    );
+                  }
+                  return Column(
                     crossAxisAlignment: isMobile
                         ? CrossAxisAlignment.center
                         : CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 10),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Text(
-                          'Find your favourite anime or manga, manhwa or whatever you like!',
-                          style: TextStyle(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .inverseSurface
-                                .withOpacity(0.8),
-                          ),
-                          textAlign: textAlignment,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Text(
+                        'Find your favourite anime or manga, manhwa or whatever you like!',
+                        style: TextStyle(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .inverseSurface
+                              .withOpacity(0.8),
                         ),
+                        textAlign: textAlignment,
                       ),
-                      const SizedBox(height: 30),
-                      Obx(() {
-                        cacheController.currentPool.length;
-                        final children = _buildHomeWidgets(
-                          context: context,
-                          serviceHandler: serviceHandler,
-                          cacheController: cacheController,
-                          offlineStorageController: offlineStorageController,
-                          settings: settings,
-                        );
-                        return Column(children: children);
-                      }),
-                      if (novelData.isNotEmpty)
-                        ReusableCarousel(
-                          title: "Recommended Novels",
-                          data: novelData,
-                          type: ItemType.novel,
-                          source: sourceController.activeNovelSource.value,
-                        ),
-                    ],
-                  ),
-                  if (!isDesktop)
-                    SizedBox(height: bottomNavBarHeight)
-                  else
-                    const SizedBox(height: 50),
-                ],
-              ),
+                    ),
+                    const SizedBox(height: 30),
+                    Obx(() {
+                      cacheController.currentPool.length;
+                      final children = _buildHomeWidgets(
+                        context: context,
+                        serviceHandler: serviceHandler,
+                        cacheController: cacheController,
+                        offlineStorageController: offlineStorageController,
+                        settings: settings,
+                      );
+                      return Column(children: children);
+                    }),
+                    if (novelData.isNotEmpty)
+                      ReusableCarousel(
+                        title: "Recommended Novels",
+                        data: novelData,
+                        type: ItemType.novel,
+                        source: sourceController.activeNovelSource.value,
+                      ),
+                  ],
+                ),
+                if (!isDesktop)
+                  SizedBox(height: bottomNavBarHeight)
+                else
+                  const SizedBox(height: 50),
+              ],
             ),
-            if (!isDesktop)
-              CustomAnimatedAppBar(
-                isVisible: _isAppBarVisibleExternally,
-                scrollController: _scrollController,
-                headerContent: const Header(type: PageType.home),
-                visibleStatusBarStyle: SystemUiOverlayStyle(
-                  statusBarIconBrightness:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Brightness.dark
-                          : Brightness.light,
-                  statusBarBrightness: Theme.of(context).brightness,
-                  statusBarColor: Colors.transparent,
-                ),
-                hiddenStatusBarStyle: SystemUiOverlayStyle(
-                  statusBarIconBrightness:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Brightness.light
-                          : Brightness.dark,
-                  statusBarBrightness:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Brightness.dark
-                          : Brightness.light,
-                  statusBarColor: Colors.transparent,
-                ),
-              ),
-          ],
+          ),
         ),
       ),
     );

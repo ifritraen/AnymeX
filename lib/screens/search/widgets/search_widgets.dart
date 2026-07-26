@@ -916,15 +916,17 @@ class _FuturisticFilterSheetState extends State<FuturisticFilterSheet> {
             icon: Icons.flag_rounded,
           ),
         ],
-        const SizedBox(height: 12),
-        _buildNeonSelector(
-          hint: 'Format',
-          value: selectedFormat,
-          options: formats,
-          optionLabels: formatLabels,
-          onChanged: (value) => setState(() => selectedFormat = value),
-          icon: isManga ? Icons.menu_book_rounded : Icons.video_library_rounded,
-        ),
+        if (widget.mediaType != 'novel' && widget.currentFilters?['format'] != 'NOVEL') ...[
+          const SizedBox(height: 12),
+          _buildNeonSelector(
+            hint: 'Format',
+            value: selectedFormat,
+            options: formats,
+            optionLabels: formatLabels,
+            onChanged: (value) => setState(() => selectedFormat = value),
+            icon: isManga ? Icons.menu_book_rounded : Icons.video_library_rounded,
+          ),
+        ],
         if (cfg.supportsSource) ...[
           const SizedBox(height: 12),
           _buildNeonSelector(

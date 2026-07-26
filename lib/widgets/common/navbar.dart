@@ -32,6 +32,7 @@ class ResponsiveNavBar extends StatefulWidget {
   final List<NavItem> items;
   final EdgeInsets? margin;
   final BorderRadius? borderRadius;
+  final Widget? trailingWidget;
 
   const ResponsiveNavBar({
     super.key,
@@ -40,6 +41,7 @@ class ResponsiveNavBar extends StatefulWidget {
     required this.items,
     this.margin,
     this.borderRadius,
+    this.trailingWidget,
   });
 
   @override
@@ -167,6 +169,8 @@ class _ResponsiveNavBarState extends State<ResponsiveNavBar>
 
   Widget _buildMobileLayout(ThemeData theme) {
     final itemCount = widget.items.length;
+    final hasTrailing = widget.trailingWidget != null;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
       child: SizedBox(
@@ -174,56 +178,77 @@ class _ResponsiveNavBarState extends State<ResponsiveNavBar>
         child: LayoutBuilder(
           builder: (context, constraints) {
             final totalWidth = constraints.maxWidth;
-            final itemWidth = totalWidth / itemCount;
+            const trailingWidth = 48.0;
+            final navWidth = hasTrailing ? (totalWidth - trailingWidth) : totalWidth;
+            final itemWidth = navWidth / itemCount;
 
-            return Stack(
+            return Row(
               children: [
-                AnimatedBuilder(
-                  animation: _indicatorPosition,
-                  builder: (context, _) {
-                    final pos = _indicatorPosition.value;
-                    return Positioned(
-                      left: pos * itemWidth + 4,
-                      top: 3,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        width: itemWidth - 8,
-                        height: 52,
-                        decoration: BoxDecoration(
-                          borderRadius:
-                              BorderRadius.circular(22.multiplyRadius()),
-                          color: theme.colorScheme.primary
-                              .opaque(0.12, iReallyMeanIt: true),
-                          border: Border.all(
-                            color: theme.colorScheme.primary
-                                .opaque(0.15, iReallyMeanIt: true),
-                            width: 0.5,
-                          ),
-                          boxShadow: [
-                            glowingShadow(context),
-                          ],
-                        ),
+                SizedBox(
+                  width: navWidth,
+                  child: Stack(
+                    children: [
+                      AnimatedBuilder(
+                        animation: _indicatorPosition,
+                        builder: (context, _) {
+                          final pos = _indicatorPosition.value;
+                          return Positioned(
+                            left: pos * itemWidth + 4,
+                            top: 3,
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              width: itemWidth - 8,
+                              height: 52,
+                              decoration: BoxDecoration(
+                                borderRadius:
+                                    BorderRadius.circular(22.multiplyRadius()),
+                                color: theme.colorScheme.primary
+                                    .opaque(0.12, iReallyMeanIt: true),
+                                border: Border.all(
+                                  color: theme.colorScheme.primary
+                                      .opaque(0.15, iReallyMeanIt: true),
+                                  width: 0.5,
+                                ),
+                                boxShadow: [
+                                  glowingShadow(context),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
-                Row(
-                  children: List.generate(itemCount, (index) {
-                    final item = widget.items[index];
-                    final isSelected = widget.currentIndex == index;
-                    return Expanded(
-                      child: GestureDetector(
-                        onTap: () => item.onTap(index),
-                        behavior: HitTestBehavior.opaque,
-                        child: _MobileNavItem(
-                          item: item,
-                          isSelected: isSelected,
-                          theme: theme,
-                        ),
+                      Row(
+                        children: List.generate(itemCount, (index) {
+                          final item = widget.items[index];
+                          final isSelected = widget.currentIndex == index;
+                          return Expanded(
+                            child: GestureDetector(
+                              onTap: () => item.onTap(index),
+                              behavior: HitTestBehavior.opaque,
+                              child: _MobileNavItem(
+                                item: item,
+                                isSelected: isSelected,
+                                theme: theme,
+                              ),
+                            ),
+                          );
+                        }),
                       ),
-                    );
-                  }),
+                    ],
+                  ),
                 ),
+                if (hasTrailing) ...[
+                  Container(
+                    width: 1,
+                    height: 28,
+                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                    color: theme.colorScheme.onSurface.opaque(0.1, iReallyMeanIt: true),
+                  ),
+                  SizedBox(
+                    width: trailingWidth - 5,
+                    child: Center(child: widget.trailingWidget!),
+                  ),
+                ],
               ],
             );
           },
@@ -236,107 +261,125 @@ class _ResponsiveNavBarState extends State<ResponsiveNavBar>
     final itemCount = widget.items.length;
     const itemHeight = 56.0;
     const gap = 4.0;
+    final hasTrailing = widget.trailingWidget != null;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-      child: SizedBox(
-        height: itemCount * (itemHeight + gap) - gap,
-        child: Stack(
-          children: [
-            AnimatedBuilder(
-              animation: _indicatorPosition,
-              builder: (context, _) {
-                final pos = _indicatorPosition.value;
-                return Positioned(
-                  top: pos * (itemHeight + gap) + 2,
-                  left: 2,
-                  right: 2,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    height: itemHeight - 4,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(18.multiplyRadius()),
-                      color: theme.colorScheme.primary
-                          .opaque(0.12, iReallyMeanIt: true),
-                      border: Border.all(
-                        color: theme.colorScheme.primary
-                            .opaque(0.15, iReallyMeanIt: true),
-                        width: 0.5,
-                      ),
-                      boxShadow: [
-                        lightGlowingShadow(context),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: List.generate(itemCount, (index) {
-                final item = widget.items[index];
-                final isSelected = widget.currentIndex == index;
-                return Padding(
-                  padding:
-                      EdgeInsets.only(bottom: index < itemCount - 1 ? gap : 0),
-                  child: AnymexOnTap(
-                    margin: 0,
-                    scale: 1,
-                    onTap: () => item.onTap(index),
-                    child: SizedBox(
-                      height: itemHeight,
-                      width: double.infinity,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeOutCubic,
-                            width: 3,
-                            height: isSelected ? 24 : 0,
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? theme.colorScheme.primary
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(1.5),
-                              boxShadow: isSelected
-                                  ? [
-                                      BoxShadow(
-                                        color: theme.colorScheme.primary
-                                            .opaque(0.5, iReallyMeanIt: true),
-                                        blurRadius: 8,
-                                        spreadRadius: 0,
-                                      ),
-                                    ]
-                                  : [],
-                            ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: itemCount * (itemHeight + gap) - gap,
+            child: Stack(
+              children: [
+                AnimatedBuilder(
+                  animation: _indicatorPosition,
+                  builder: (context, _) {
+                    final pos = _indicatorPosition.value;
+                    return Positioned(
+                      top: pos * (itemHeight + gap) + 2,
+                      left: 2,
+                      right: 2,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        height: itemHeight - 4,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(18.multiplyRadius()),
+                          color: theme.colorScheme.primary
+                              .opaque(0.12, iReallyMeanIt: true),
+                          border: Border.all(
+                            color: theme.colorScheme.primary
+                                .opaque(0.15, iReallyMeanIt: true),
+                            width: 0.5,
                           ),
-                          const SizedBox(width: 8),
-                          item.altIcon ??
-                              AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 250),
-                                child: Icon(
-                                  isSelected
-                                      ? item.selectedIcon
-                                      : item.unselectedIcon,
-                                  key: ValueKey(isSelected),
+                          boxShadow: [
+                            lightGlowingShadow(context),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(itemCount, (index) {
+                    final item = widget.items[index];
+                    final isSelected = widget.currentIndex == index;
+                    return Padding(
+                      padding:
+                          EdgeInsets.only(bottom: index < itemCount - 1 ? gap : 0),
+                      child: AnymexOnTap(
+                        margin: 0,
+                        scale: 1,
+                        onTap: () => item.onTap(index),
+                        child: SizedBox(
+                          height: itemHeight,
+                          width: double.infinity,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeOutCubic,
+                                width: 3,
+                                height: isSelected ? 24 : 0,
+                                decoration: BoxDecoration(
                                   color: isSelected
                                       ? theme.colorScheme.primary
-                                      : theme.colorScheme.onSurface
-                                          .opaque(0.5, iReallyMeanIt: true),
-                                  size: item.iconSize ?? 22,
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(1.5),
+                                  boxShadow: isSelected
+                                      ? [
+                                          BoxShadow(
+                                            color: theme.colorScheme.primary
+                                                .opaque(0.5, iReallyMeanIt: true),
+                                            blurRadius: 8,
+                                            spreadRadius: 0,
+                                          ),
+                                        ]
+                                      : [],
                                 ),
                               ),
-                          const SizedBox(width: 8),
-                        ],
+                              const SizedBox(width: 8),
+                              item.altIcon ??
+                                  AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 250),
+                                    child: Icon(
+                                      isSelected
+                                          ? item.selectedIcon
+                                          : item.unselectedIcon,
+                                      key: ValueKey(isSelected),
+                                      color: isSelected
+                                          ? theme.colorScheme.primary
+                                          : theme.colorScheme.onSurface
+                                              .opaque(0.45, iReallyMeanIt: true),
+                                      size: item.iconSize ?? 22,
+                                    ),
+                                  ),
+                              const SizedBox(width: 8),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                );
-              }),
+                    );
+                  }),
+                ),
+              ],
+            ),
+          ),
+          if (hasTrailing) ...[
+            Container(
+              height: 1,
+              width: 28,
+              margin: const EdgeInsets.symmetric(vertical: 6),
+              color: theme.colorScheme.onSurface.opaque(0.1, iReallyMeanIt: true),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: widget.trailingWidget!,
             ),
           ],
-        ),
+        ],
       ),
     );
   }

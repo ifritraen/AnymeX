@@ -19,14 +19,17 @@ import 'package:anymex/controllers/sync/gist_sync_controller.dart';
 import 'package:anymex/controllers/theme.dart';
 import 'package:anymex/controllers/ui/greeting.dart';
 import 'package:anymex/database/database.dart';
-import 'package:anymex/firebase_options.dart';
 import 'package:anymex/screens/anime/home_page.dart';
 import 'package:anymex/screens/anime/widgets/comments/controller/comment_preloader.dart';
 import 'package:anymex/screens/extensions/ExtensionScreen.dart';
+import 'package:anymex_extension_runtime_bridge/anymex_extension_runtime_bridge.dart';
 import 'package:anymex/screens/home_page.dart';
 import 'package:anymex/screens/library/my_library.dart';
 import 'package:anymex/screens/manga/home_page.dart';
 import 'package:anymex/screens/novel/home_page.dart';
+import 'package:anymex/screens/novel/search/search_page.dart';
+import 'package:anymex/screens/search/search_view.dart';
+import 'package:anymex/utils/function.dart';
 import 'package:anymex/services/commentum_service.dart';
 import 'package:anymex/utils/external_font_loader.dart';
 import 'package:anymex/utils/logger.dart';
@@ -34,7 +37,7 @@ import 'package:anymex/utils/deeplink.dart';
 import 'package:anymex/utils/register_protocol/register_protocol.dart';
 import 'package:anymex/widgets/common/glow.dart';
 import 'package:anymex/widgets/common/navbar.dart';
-import 'package:anymex/widgets/common/fps_meter.dart';
+import 'package:anymex/widgets/common/lazy_indexed_stack.dart';
 import 'package:anymex/widgets/custom_widgets/anymex_image.dart';
 import 'package:anymex/widgets/custom_widgets/anymex_splash_screen.dart';
 import 'package:anymex/widgets/custom_widgets/anymex_titlebar.dart';
@@ -42,9 +45,8 @@ import 'package:anymex/widgets/helper/platform_builder.dart';
 import 'package:anymex/widgets/non_widgets/settings_sheet.dart';
 import 'package:anymex/widgets/non_widgets/snackbar.dart';
 import 'package:app_links/app_links.dart';
-import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -62,8 +64,6 @@ import 'package:window_manager/window_manager.dart';
 WebViewEnvironment? webViewEnvironment;
 late Isar isar;
 final appLinks = AppLinks();
-
-FirebaseAnalytics analytics = FirebaseAnalytics.instance;
 
 class MyHttpoverrides extends HttpOverrides {
   @override
@@ -155,13 +155,7 @@ void main(List<String> args) async {
     await safeCall(() => dotenv.load(fileName: ".env"),
         errorMessage: 'Failed to load .env file');
 
-    if (!Platform.isLinux) {
-      await safeCall(
-          () => Firebase.initializeApp(
-                options: DefaultFirebaseOptions.currentPlatform,
-              ),
-          errorMessage: 'Failed to initialize Firebase');
-    }
+
 
     if (Platform.isWindows || Platform.isLinux) {
       await safeCall(() {
@@ -258,6 +252,9 @@ void _initializeGetxController() async {
     Get.lazyPut(() => CacheController());
   }, errorMessage: 'Failed to register GetX controllers');
 
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 35 * 1024 * 1024;
+  PaintingBinding.instance.imageCache.maximumSize = 100;
+
   await safeCall(() => StorageManagerService().enforceImageCacheLimit(),
       errorMessage: 'Failed to enforce image cache limit');
 }
@@ -340,7 +337,7 @@ class _MainAppState extends State<MainApp> {
       child: GetMaterialApp(
         scrollBehavior: MyCustomScrollBehavior(),
         debugShowCheckedModeBanner: false,
-        title: "AnymeX",
+        title: "Anymex R",
         theme: theme.lightTheme,
         darkTheme: theme.darkTheme,
         themeMode: theme.isSystemMode
@@ -368,16 +365,10 @@ class _MainAppState extends State<MainApp> {
                     child: AnymexTitleBar.titleBar(),
                   ),
                 ),
-                const FpsMeter(),
               ],
             );
           }
-          return Stack(
-            children: [
-              child!,
-              const FpsMeter(),
-            ],
-          );
+          return child!;
         },
         enableLog: true,
         logWriterCallback: (text, {isError = false}) async {
@@ -396,8 +387,9 @@ class FilterScreen extends StatefulWidget {
 }
 
 class _FilterScreenState extends State<FilterScreen> {
-  int _selectedIndex = 1;
+  int _selectedIndex = 0;
   int _mobileSelectedIndex = 0;
+  final RxBool _isBottomBarVisible = true.obs;
 
   @override
   void initState() {
@@ -410,15 +402,52 @@ class _FilterScreenState extends State<FilterScreen> {
     });
   }
 
-  void _onItemTapped(int index) {
+  void _navigateToTabSearch(String tab) {
+    switch (tab) {
+      case 'Library':
+      case 'Anime':
+        navigate(() => const SearchPage(searchTerm: '', isManga: false));
+        break;
+      case 'Manga':
+        navigate(() => const SearchPage(searchTerm: '', isManga: true));
+        break;
+      case 'Novel':
+        navigate(() => SearchPage(searchTerm: '', isManga: true, type: ItemType.novel));
+        break;
+    }
+  }
+
+  void _onItemTapped(int navItemIndex) {
+    // Profile is item 0 in navbar, tabs are items 1..N
+    final tabIndex = navItemIndex > 0 ? navItemIndex - 1 : 0;
+    if (_selectedIndex == tabIndex) {
+      final authService = Get.find<ServiceHandler>();
+      final settings = Get.find<Settings>();
+      final navTabs = _getNavTabs(authService, settings);
+      final validIndex = tabIndex.clamp(0, navTabs.length - 1);
+      final currentTab = navTabs[validIndex];
+      _navigateToTabSearch(currentTab);
+      return;
+    }
     setState(() {
-      _selectedIndex = index;
+      _selectedIndex = tabIndex;
     });
   }
 
-  void _onMobileItemTapped(int index) {
+  void _onMobileItemTapped(int navItemIndex) {
+    // Profile is item 0 in navbar, tabs are items 1..N
+    final tabIndex = navItemIndex > 0 ? navItemIndex - 1 : 0;
+    if (_mobileSelectedIndex == tabIndex) {
+      final authService = Get.find<ServiceHandler>();
+      final settings = Get.find<Settings>();
+      final navTabs = _getNavTabs(authService, settings);
+      final validIndex = tabIndex.clamp(0, navTabs.length - 1);
+      final currentTab = navTabs[validIndex];
+      _navigateToTabSearch(currentTab);
+      return;
+    }
     setState(() {
-      _mobileSelectedIndex = index;
+      _mobileSelectedIndex = tabIndex;
     });
   }
 
@@ -595,15 +624,15 @@ class _FilterScreenState extends State<FilterScreen> {
           Expanded(
             child: Obx(() {
               final navTabs = _getNavTabs(authService, settings);
-              final desktopRoutes = [
-                const SizedBox.shrink(),
-                for (final tab in navTabs) _getWidgetForTab(tab),
+              final desktopBuilders = <WidgetBuilder>[
+                (_) => const SizedBox.shrink(),
+                for (final tab in navTabs) (_) => _getWidgetForTab(tab),
               ];
               final validIndex =
                   _selectedIndex.clamp(0, desktopRoutes.length - 1);
               return IndexedStack(
                 index: validIndex,
-                children: desktopRoutes,
+                itemBuilders: desktopBuilders,
               );
             }),
           ),
@@ -623,20 +652,152 @@ class _FilterScreenState extends State<FilterScreen> {
       final validIndex = _mobileSelectedIndex.clamp(0, mobileRoutes.length - 1);
 
       return Scaffold(
-          body: IndexedStack(
-            index: validIndex,
-            children: mobileRoutes,
+          body: NotificationListener<UserScrollNotification>(
+            onNotification: (notification) {
+              if (notification.direction == ScrollDirection.reverse) {
+                if (_isBottomBarVisible.value) {
+                  _isBottomBarVisible.value = false;
+                }
+              } else if (notification.direction == ScrollDirection.forward) {
+                if (!_isBottomBarVisible.value) {
+                  _isBottomBarVisible.value = true;
+                }
+              }
+              return false;
+            },
+            child: LazyIndexedStack(
+              index: validIndex,
+              itemBuilders: [
+                for (final tab in navTabs) (_) => _getWidgetForTab(tab),
+              ],
+            ),
           ),
           extendBody: true,
-          bottomNavigationBar: ResponsiveNavBar(
-            isDesktop: false,
-            currentIndex: validIndex,
-            margin: const EdgeInsets.symmetric(vertical: 30, horizontal: 32),
-            items: [
-              for (final tab in navTabs)
-                _getNavItemForTab(tab, isSimkl, _onMobileItemTapped),
-            ],
-          ));
+          bottomNavigationBar: Obx(() {
+            return AnimatedSlide(
+              offset: _isBottomBarVisible.value
+                  ? Offset.zero
+                  : const Offset(0, 1.8),
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOut,
+              child: ResponsiveNavBar(
+                isDesktop: false,
+                currentIndex: validIndex + 1,
+                margin: const EdgeInsets.symmetric(vertical: 30, horizontal: 32),
+                trailingWidget: Obx(() {
+                  final isExtensionMode =
+                      serviceHandler.serviceType.value == ServicesType.extensions;
+                  final primaryColor = Theme.of(context).colorScheme.primary;
+                  final inactiveColor = Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .opaque(0.4, iReallyMeanIt: true);
+
+                  return GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      if (isExtensionMode) {
+                        serviceHandler.changeService(ServicesType.anilist);
+                      } else {
+                        serviceHandler.changeService(ServicesType.extensions);
+                      }
+                    },
+                    behavior: HitTestBehavior.opaque,
+                    child: Container(
+                      width: 38,
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      decoration: BoxDecoration(
+                        color: isExtensionMode
+                            ? primaryColor.opaque(0.15, iReallyMeanIt: true)
+                            : Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest
+                                .opaque(0.3, iReallyMeanIt: true),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isExtensionMode
+                              ? primaryColor.opaque(0.3, iReallyMeanIt: true)
+                              : Colors.transparent,
+                          width: 0.5,
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          RotatedBox(
+                            quarterTurns: 3,
+                            child: Text(
+                              isExtensionMode ? 'EXT' : 'ONLINE',
+                              style: TextStyle(
+                                fontSize: 8.0,
+                                fontFamily: 'Poppins-Bold',
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                                color: isExtensionMode ? primaryColor : inactiveColor,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Icon(
+                            isExtensionMode
+                                ? Icons.extension_rounded
+                                : Icons.public_rounded,
+                            size: 15,
+                            color: isExtensionMode ? primaryColor : inactiveColor,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+                items: [
+                  NavItem(
+                    unselectedIcon: IconlyBold.profile,
+                    selectedIcon: IconlyBold.profile,
+                    onTap: (index) {
+                      SettingsSheet.show(context);
+                    },
+                    label: 'Profile',
+                    altIcon: Obx(() {
+                      final count = Get.find<SourceController>().extensionUpdatesCount.value;
+                      final avatar = CircleAvatar(
+                        radius: 12,
+                        backgroundColor: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainer
+                            .withValues(alpha: 0.3),
+                        child: authService.isLoggedIn.value
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(59),
+                                child: AnymeXImage(
+                                  width: 24,
+                                  height: 24,
+                                  fit: BoxFit.cover,
+                                  radius: 0,
+                                  imageUrl: authService
+                                          .profileData.value.avatar ??
+                                      '',
+                                ),
+                              )
+                            : const Icon(IconlyBold.profile, size: 18),
+                      );
+                      if (count > 0) {
+                        return Badge(
+                          label: Text(count.toString()),
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          textColor: Theme.of(context).colorScheme.onPrimary,
+                          child: avatar,
+                        );
+                      }
+                      return avatar;
+                    }),
+                  ),
+                  for (final tab in navTabs)
+                    _getNavItemForTab(tab, isSimkl, _onMobileItemTapped),
+                ],
+              ),
+            );
+          }));
     });
   }
 }

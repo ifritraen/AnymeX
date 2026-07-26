@@ -145,7 +145,7 @@ class ServiceHandler extends GetxController {
 
   RxList<Widget> novelWidgets(BuildContext context) {
     if (serviceType.value == ServicesType.anilist) {
-      return anilistService.mangaWidgets(context);
+      return anilistService.novelWidgets(context);
     } else if (serviceType.value == ServicesType.mal) {
       return malService.mangaWidgets(context);
     } else {
