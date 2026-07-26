@@ -74,6 +74,7 @@ class _MyLibraryState extends State<MyLibrary>
         bottom: false,
         child: CustomScrollView(
           controller: _scrollController,
+          slivers: [
             if (serviceHandler.serviceType.value == ServicesType.extensions)
               SliverToBoxAdapter(
                 child: Obx(() {
