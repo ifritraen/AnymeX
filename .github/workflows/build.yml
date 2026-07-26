@@ -17,14 +17,6 @@ jobs:
         include:
           - platform: android
             os: ubuntu-latest
-          - platform: linux
-            os: ubuntu-latest
-          - platform: windows
-            os: windows-latest
-          - platform: macos
-            os: macos-latest
-          - platform: ios
-            os: macos-latest
     
     runs-on: ${{ matrix.os }}
 
