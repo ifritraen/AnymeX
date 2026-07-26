@@ -92,14 +92,15 @@ jobs:
           cd $GITHUB_WORKSPACE
           CMAKE_DIR="$HOME/cmake/cmake-3.18.1-Linux-x86_64"
           echo "cmake.dir=$CMAKE_DIR" >> android/local.properties
-          mkdir -p android/app
-          echo "$KEYSTORE_BASE64" | base64 -d > android/app/anymex.jks
-          cat > android/key.properties << EOF
-          storePassword=$KEYSTORE_PASSWORD
-          keyPassword=$KEYSTORE_PASSWORD
-          keyAlias=$KEY_ALIAS
-          storeFile=anymex.jks
-          EOF
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > android/app/anymex.jks
+            cat > android/key.properties << EOF
+storePassword=$KEYSTORE_PASSWORD
+keyPassword=$KEYSTORE_PASSWORD
+keyAlias=$KEY_ALIAS
+storeFile=anymex.jks
+EOF
+          fi
       
       - name: Setup Linux
         if: matrix.platform == 'linux'
