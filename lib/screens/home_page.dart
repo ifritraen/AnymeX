@@ -317,41 +317,42 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       const SizedBox(height: 10),
                       Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Text(
-                        'Find your favourite anime or manga, manhwa or whatever you like!',
-                        style: TextStyle(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .inverseSurface
-                              .withOpacity(0.8),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Text(
+                          'Find your favourite anime or manga, manhwa or whatever you like!',
+                          style: TextStyle(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .inverseSurface
+                                .withOpacity(0.8),
+                          ),
+                          textAlign: textAlignment,
                         ),
-                        textAlign: textAlignment,
                       ),
-                    ),
-                    const SizedBox(height: 30),
-                    Obx(() {
-                      cacheController.currentPool.length;
-                      final children = _buildHomeWidgets(
-                        context: context,
-                        serviceHandler: serviceHandler,
-                        cacheController: cacheController,
-                        offlineStorageController: offlineStorageController,
-                        settings: settings,
-                      );
-                      return Column(children: children);
-                    }),
-                    if (novelData.isNotEmpty)
-                      ReusableCarousel(
-                        title: "Recommended Novels",
-                        data: novelData,
-                        type: ItemType.novel,
-                        source: sourceController.activeNovelSource.value,
-                      ),
-                  ],
-                ),
+                      const SizedBox(height: 30),
+                      Obx(() {
+                        cacheController.currentPool.length;
+                        final children = _buildHomeWidgets(
+                          context: context,
+                          serviceHandler: serviceHandler,
+                          cacheController: cacheController,
+                          offlineStorageController: offlineStorageController,
+                          settings: settings,
+                        );
+                        return Column(children: children);
+                      }),
+                      if (novelData.isNotEmpty)
+                        ReusableCarousel(
+                          title: "Recommended Novels",
+                          data: novelData,
+                          type: ItemType.novel,
+                          source: sourceController.activeNovelSource.value,
+                        ),
+                    ],
+                  );
+                }),
                 if (!isDesktop)
-                  SizedBox(height: bottomNavBarHeight)
+                  SizedBox(height: bottomNavBarHeight),
                 else
                   const SizedBox(height: 50),
               ],
