@@ -94,7 +94,7 @@ jobs:
           echo "cmake.dir=$CMAKE_DIR" >> android/local.properties
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "$KEYSTORE_BASE64" | base64 -d > android/app/anymex.jks
-            cat > android/key.properties << EOF
+            cat << 'EOF' > android/key.properties
 storePassword=$KEYSTORE_PASSWORD
 keyPassword=$KEYSTORE_PASSWORD
 keyAlias=$KEY_ALIAS
