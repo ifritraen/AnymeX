@@ -629,10 +629,12 @@ class _FilterScreenState extends State<FilterScreen> {
                 for (final tab in navTabs) (_) => _getWidgetForTab(tab),
               ];
               final validIndex =
-                  _selectedIndex.clamp(0, desktopRoutes.length - 1);
+                  _selectedIndex.clamp(0, desktopBuilders.length - 1);
               return IndexedStack(
                 index: validIndex,
-                itemBuilders: desktopBuilders,
+                children: [
+                  for (final tab in navTabs) _getWidgetForTab(tab),
+                ],
               );
             }),
           ),
@@ -691,7 +693,7 @@ class _FilterScreenState extends State<FilterScreen> {
                   final inactiveColor = Theme.of(context)
                       .colorScheme
                       .onSurface
-                      .opaque(0.4, iReallyMeanIt: true);
+                      .withValues(alpha: 0.4);
 
                   return GestureDetector(
                     onTap: () {
@@ -708,15 +710,15 @@ class _FilterScreenState extends State<FilterScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 6),
                       decoration: BoxDecoration(
                         color: isExtensionMode
-                            ? primaryColor.opaque(0.15, iReallyMeanIt: true)
+                            ? primaryColor.withValues(alpha: 0.15)
                             : Theme.of(context)
                                 .colorScheme
                                 .surfaceContainerHighest
-                                .opaque(0.3, iReallyMeanIt: true),
+                                .withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: isExtensionMode
-                              ? primaryColor.opaque(0.3, iReallyMeanIt: true)
+                              ? primaryColor.withValues(alpha: 0.3)
                               : Colors.transparent,
                           width: 0.5,
                         ),
