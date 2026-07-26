@@ -36,7 +36,6 @@ android {
         jniLibs {
             useLegacyPackaging true
             excludes += "**/libtorrent_flutter.so"
-            excludes += "**/libdartjni.so"
         }
         resources {
             exclude 'META-INF/versions/9/OSGI-INF/MANIFEST.MF'
@@ -62,7 +61,7 @@ android {
             signingConfig = signingConfigs.release
             minifyEnabled true
             shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
 
         debug {
@@ -71,7 +70,7 @@ android {
             signingConfig = signingConfigs.debug
             minifyEnabled true
             shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
 }
