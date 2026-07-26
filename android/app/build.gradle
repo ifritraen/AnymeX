@@ -54,18 +54,28 @@ android {
                     keyPassword keystoreProperties['keyPassword']
                     storeFile kFile
                     storePassword keystoreProperties['storePassword']
-                } else {
-                    initWith(signingConfigs.debug)
                 }
-            } else {
-                initWith(signingConfigs.debug)
             }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.release
+            def keystoreProperties = new Properties()
+            def keystorePropertiesFile = rootProject.file('key.properties')
+            boolean hasValidKey = false
+            if (keystorePropertiesFile.exists()) {
+                keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+                def kFile = keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+                if (kFile != null && kFile.exists()) {
+                    hasValidKey = true
+                }
+            }
+            if (hasValidKey) {
+                signingConfig = signingConfigs.release
+            } else {
+                signingConfig = signingConfigs.debug
+            }
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
