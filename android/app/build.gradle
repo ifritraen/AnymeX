@@ -53,19 +53,17 @@ android {
                 storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
                 storePassword keystoreProperties['storePassword']
             } else {
-                signingConfig = signingConfigs.debug
+                keyAlias 'androiddebugkey'
+                keyPassword 'android'
+                storeFile file("${System.getProperty('user.home')}/.android/debug.keystore")
+                storePassword 'android'
             }
         }
     }
 
     buildTypes {
         release {
-            def keystorePropertiesFile = rootProject.file('key.properties')
-            if (keystorePropertiesFile.exists()) {
-                signingConfig = signingConfigs.release
-            } else {
-                signingConfig = signingConfigs.debug
-            }
+            signingConfig = signingConfigs.release
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
