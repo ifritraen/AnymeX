@@ -352,7 +352,7 @@ class _HomePageState extends State<HomePage> {
                   );
                 }),
                 if (!isDesktop)
-                  SizedBox(height: bottomNavBarHeight),
+                  SizedBox(height: bottomNavBarHeight)
                 else
                   const SizedBox(height: 50),
               ],

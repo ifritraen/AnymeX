@@ -330,95 +330,12 @@ class _ExtensionSection extends StatelessWidget {
             ],
           ),
         ),
-        child: Row(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: theme.colorScheme.onSurface
-                      .opaque(0.08, iReallyMeanIt: true),
-                  width: 0.8,
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(15),
-                child: AnymeXImage(
-                  width: 48,
-                  height: 48,
-                  imageUrl: source.iconUrl ?? '',
-                  errorImage: '',
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          source.name ?? 'Unknown',
-                          style: TextStyle(
-                            fontFamily: 'Poppins-SemiBold',
-                            fontSize: 14,
-                            color: theme.colorScheme.onSurface,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      if (source.lang != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary
-                                .opaque(0.15, iReallyMeanIt: true),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            source.lang!.toUpperCase(),
-                            style: TextStyle(
-                              fontFamily: 'Poppins-SemiBold',
-                              fontSize: 10,
-                              color: theme.colorScheme.primary,
-                            ),
-                          ),
-                        ),
-                      if (source.lang != null) const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.onSurface
-                              .opaque(0.08, iReallyMeanIt: true),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          'v${source.version ?? "1.0"}',
-                          style: TextStyle(
-                            fontFamily: 'Poppins-Regular',
-                            fontSize: 10,
-                            color: theme.colorScheme.onSurface
-                                .opaque(0.7, iReallyMeanIt: true),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+        const SizedBox(height: 6),
+        FutureReusableCarousel(
+          future: latestFuture,
+          title: '',
+          type: itemType,
+          source: source,
         ),
       ],
     );
