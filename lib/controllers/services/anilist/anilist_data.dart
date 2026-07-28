@@ -84,6 +84,26 @@ List<_SeasonInfo> _getPrev3Seasons() {
   return list;
 }
 
+List<Media> _sortMediaByRating(List<Media> items) {
+  final list = items.removeDupes();
+  list.sort((a, b) {
+    final ratingA = double.tryParse(a.rating) ?? 0.0;
+    final ratingB = double.tryParse(b.rating) ?? 0.0;
+    return ratingB.compareTo(ratingA);
+  });
+  return list;
+}
+
+List<Media> _sortMediaByPopularity(List<Media> items) {
+  final list = items.removeDupes();
+  list.sort((a, b) {
+    final popA = double.tryParse(a.popularity) ?? 0.0;
+    final popB = double.tryParse(b.popularity) ?? 0.0;
+    return popB.compareTo(popA);
+  });
+  return list;
+}
+
 class AnilistData extends GetxController implements BaseService, OnlineService {
   final anilistAuth = Get.find<AnilistAuth>();
   final communityService = Get.find<CommunityService>();
@@ -620,18 +640,18 @@ class AnilistData extends GetxController implements BaseService, OnlineService {
             parseMediaList(responseData['topRatedThisSeason']['media']);
       }
       if (responseData['prev1TopRated'] != null) {
-        topRatedPrev3SeasonsAnimes.value = [
+        topRatedPrev3SeasonsAnimes.value = _sortMediaByRating([
           ...parseMediaList(responseData['prev1TopRated']['media']),
           ...parseMediaList(responseData['prev2TopRated']['media']),
           ...parseMediaList(responseData['prev3TopRated']['media']),
-        ];
+        ]);
       }
       if (responseData['prev1Popular'] != null) {
-        popularPrev3SeasonsAnimes.value = [
+        popularPrev3SeasonsAnimes.value = _sortMediaByPopularity([
           ...parseMediaList(responseData['prev1Popular']['media']),
           ...parseMediaList(responseData['prev2Popular']['media']),
           ...parseMediaList(responseData['prev3Popular']['media']),
-        ];
+        ]);
       }
     } else {
       throw Exception('Failed to load AniList data: ${response.statusCode}');
@@ -1041,18 +1061,18 @@ averageScore
             parseMediaList(responseData['topRatedThisSeasonManga']['media']);
       }
       if (responseData['prev1TopRatedManga'] != null) {
-        topRatedPrev3SeasonsMangas.value = [
+        topRatedPrev3SeasonsMangas.value = _sortMediaByRating([
           ...parseMediaList(responseData['prev1TopRatedManga']['media']),
           ...parseMediaList(responseData['prev2TopRatedManga']['media']),
           ...parseMediaList(responseData['prev3TopRatedManga']['media']),
-        ];
+        ]);
       }
       if (responseData['prev1PopularManga'] != null) {
-        popularPrev3SeasonsMangas.value = [
+        popularPrev3SeasonsMangas.value = _sortMediaByPopularity([
           ...parseMediaList(responseData['prev1PopularManga']['media']),
           ...parseMediaList(responseData['prev2PopularManga']['media']),
           ...parseMediaList(responseData['prev3PopularManga']['media']),
-        ];
+        ]);
       }
 
       if (responseData['popularThisSeasonNovels'] != null) {
@@ -1064,18 +1084,18 @@ averageScore
             parseMediaList(responseData['topRatedThisSeasonNovels']['media']);
       }
       if (responseData['prev1TopRatedNovels'] != null) {
-        topRatedPrev3SeasonsNovels.value = [
+        topRatedPrev3SeasonsNovels.value = _sortMediaByRating([
           ...parseMediaList(responseData['prev1TopRatedNovels']['media']),
           ...parseMediaList(responseData['prev2TopRatedNovels']['media']),
           ...parseMediaList(responseData['prev3TopRatedNovels']['media']),
-        ];
+        ]);
       }
       if (responseData['prev1PopularNovels'] != null) {
-        popularPrev3SeasonsNovels.value = [
+        popularPrev3SeasonsNovels.value = _sortMediaByPopularity([
           ...parseMediaList(responseData['prev1PopularNovels']['media']),
           ...parseMediaList(responseData['prev2PopularNovels']['media']),
           ...parseMediaList(responseData['prev3PopularNovels']['media']),
-        ];
+        ]);
       }
     } else {
       throw Exception(
