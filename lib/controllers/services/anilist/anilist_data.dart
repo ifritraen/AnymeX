@@ -637,10 +637,10 @@ class AnilistData extends GetxController implements BaseService, OnlineService {
     }
   }
 
-  Future<void> fetchAnilistMangaPage() async {
-    const String url = 'https://graphql.anilist.co';
+    final currSeason = _getCurrentSeason();
+    final prevSeasons = _getPrev3Seasons();
 
-    const String query = '''
+    final String query = '''
   query CombinedMangaQueries(\$perPage: Int) {
     # Popular Mangas (Page 1)
     popularMangas: Page(page: 1, perPage: \$perPage) {

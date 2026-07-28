@@ -1,6 +1,7 @@
 import 'package:anymex/controllers/settings/settings.dart';
 import 'package:anymex/models/Media/media.dart';
 import 'package:anymex/utils/extension_utils.dart';
+import 'package:anymex/utils/function.dart';
 import 'package:anymex/widgets/common/cards/base_card.dart';
 import 'package:anymex/widgets/common/cards/card_gate.dart';
 import 'package:anymex/widgets/common/reusable_carousel.dart';
