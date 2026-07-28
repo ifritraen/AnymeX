@@ -889,83 +889,83 @@ averageScore
     }
 
     # Seasonal Manga & Novels
-    popularThisSeasonManga: Page(page: 1, perPage: $perPage) {
+    popularThisSeasonManga: Page(page: 1, perPage: \$perPage) {
       media(type: MANGA, season: ${currSeason.season}, seasonYear: ${currSeason.year}, sort: POPULARITY_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
-    topRatedThisSeasonManga: Page(page: 1, perPage: $perPage) {
+    topRatedThisSeasonManga: Page(page: 1, perPage: \$perPage) {
       media(type: MANGA, season: ${currSeason.season}, seasonYear: ${currSeason.year}, sort: SCORE_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
-    prev1TopRatedManga: Page(page: 1, perPage: $perPage) {
+    prev1TopRatedManga: Page(page: 1, perPage: \$perPage) {
       media(type: MANGA, season: ${prevSeasons[0].season}, seasonYear: ${prevSeasons[0].year}, sort: SCORE_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
-    prev2TopRatedManga: Page(page: 1, perPage: $perPage) {
+    prev2TopRatedManga: Page(page: 1, perPage: \$perPage) {
       media(type: MANGA, season: ${prevSeasons[1].season}, seasonYear: ${prevSeasons[1].year}, sort: SCORE_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
-    prev3TopRatedManga: Page(page: 1, perPage: $perPage) {
+    prev3TopRatedManga: Page(page: 1, perPage: \$perPage) {
       media(type: MANGA, season: ${prevSeasons[2].season}, seasonYear: ${prevSeasons[2].year}, sort: SCORE_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
-    prev1PopularManga: Page(page: 1, perPage: $perPage) {
+    prev1PopularManga: Page(page: 1, perPage: \$perPage) {
       media(type: MANGA, season: ${prevSeasons[0].season}, seasonYear: ${prevSeasons[0].year}, sort: POPULARITY_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
-    prev2PopularManga: Page(page: 1, perPage: $perPage) {
+    prev2PopularManga: Page(page: 1, perPage: \$perPage) {
       media(type: MANGA, season: ${prevSeasons[1].season}, seasonYear: ${prevSeasons[1].year}, sort: POPULARITY_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
-    prev3PopularManga: Page(page: 1, perPage: $perPage) {
+    prev3PopularManga: Page(page: 1, perPage: \$perPage) {
       media(type: MANGA, season: ${prevSeasons[2].season}, seasonYear: ${prevSeasons[2].year}, sort: POPULARITY_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
 
-    popularThisSeasonNovels: Page(page: 1, perPage: $perPage) {
+    popularThisSeasonNovels: Page(page: 1, perPage: \$perPage) {
       media(type: MANGA, format: NOVEL, season: ${currSeason.season}, seasonYear: ${currSeason.year}, sort: POPULARITY_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
-    topRatedThisSeasonNovels: Page(page: 1, perPage: $perPage) {
+    topRatedThisSeasonNovels: Page(page: 1, perPage: \$perPage) {
       media(type: MANGA, format: NOVEL, season: ${currSeason.season}, seasonYear: ${currSeason.year}, sort: SCORE_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
-    prev1TopRatedNovels: Page(page: 1, perPage: $perPage) {
+    prev1TopRatedNovels: Page(page: 1, perPage: \$perPage) {
       media(type: MANGA, format: NOVEL, season: ${prevSeasons[0].season}, seasonYear: ${prevSeasons[0].year}, sort: SCORE_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
-    prev2TopRatedNovels: Page(page: 1, perPage: $perPage) {
+    prev2TopRatedNovels: Page(page: 1, perPage: \$perPage) {
       media(type: MANGA, format: NOVEL, season: ${prevSeasons[1].season}, seasonYear: ${prevSeasons[1].year}, sort: SCORE_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
-    prev3TopRatedNovels: Page(page: 1, perPage: $perPage) {
+    prev3TopRatedNovels: Page(page: 1, perPage: \$perPage) {
       media(type: MANGA, format: NOVEL, season: ${prevSeasons[2].season}, seasonYear: ${prevSeasons[2].year}, sort: SCORE_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
-    prev1PopularNovels: Page(page: 1, perPage: $perPage) {
+    prev1PopularNovels: Page(page: 1, perPage: \$perPage) {
       media(type: MANGA, format: NOVEL, season: ${prevSeasons[0].season}, seasonYear: ${prevSeasons[0].year}, sort: POPULARITY_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
-    prev2PopularNovels: Page(page: 1, perPage: $perPage) {
+    prev2PopularNovels: Page(page: 1, perPage: \$perPage) {
       media(type: MANGA, format: NOVEL, season: ${prevSeasons[1].season}, seasonYear: ${prevSeasons[1].year}, sort: POPULARITY_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
-    prev3PopularNovels: Page(page: 1, perPage: $perPage) {
+    prev3PopularNovels: Page(page: 1, perPage: \$perPage) {
       media(type: MANGA, format: NOVEL, season: ${prevSeasons[2].season}, seasonYear: ${prevSeasons[2].year}, sort: POPULARITY_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }

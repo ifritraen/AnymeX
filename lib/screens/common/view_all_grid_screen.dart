@@ -2,6 +2,7 @@ import 'package:anymex/controllers/settings/settings.dart';
 import 'package:anymex/models/Media/media.dart';
 import 'package:anymex/utils/extension_utils.dart';
 import 'package:anymex/widgets/common/cards/card_gate.dart';
+import 'package:anymex/widgets/common/reusable_carousel.dart';
 import 'package:anymex/widgets/custom_widgets/custom_text.dart';
 import 'package:anymex_extension_runtime_bridge/anymex_extension_runtime_bridge.dart';
 import 'package:flutter/material.dart';
