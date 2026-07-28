@@ -439,6 +439,12 @@ class Settings extends GetxController {
     UISettingsKeys.enablePosterKenBurns.set(value);
   }
 
+  int get prevSeasonsCount => _getUISetting((s) => s.prevSeasonsCount);
+  set prevSeasonsCount(int value) {
+    uiSettings.update((s) => s?.prevSeasonsCount = value);
+    UISettingsKeys.prevSeasonsCount.set(value);
+  }
+
   double get tabBarHeight => _getUISetting((s) => s.tabBarHeight);
   set tabBarHeight(double value) {
     uiSettings.update((s) => s?.tabBarHeight = value);

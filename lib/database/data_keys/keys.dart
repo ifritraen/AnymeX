@@ -292,6 +292,7 @@ enum UISettingsKeys {
   enableImmersiveMode,
   customColorProfile,
   customColorProfiles,
+  prevSeasonsCount,
 }
 
 enum DownloadKeys {

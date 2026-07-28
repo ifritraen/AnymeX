@@ -569,6 +569,28 @@ class _SettingsAnilistApiState extends State<SettingsAnilistApi> {
           description: 'Enable NSFW/adult entries in AniList content.',
           switchValue: s.displayAdultContent,
           onChanged: (v) => _update((s) => s.displayAdultContent = v)),
+        Obx(() {
+          final currentCount = Get.find<Settings>().prevSeasonsCount;
+          return CustomTile(
+            icon: Icons.history_rounded,
+            title: 'Previous Seasons Count',
+            description: '$currentCount previous ${currentCount == 1 ? "season" : "seasons"}',
+            isDescBold: true,
+            onTap: () => _showOptionPicker<int>(
+              title: 'Previous Seasons Count',
+              items: List.generate(10, (i) => i + 1),
+              value: currentCount,
+              itemLabel: (val) => '$val ${val == 1 ? "season" : "seasons"}',
+              onChanged: (v) {
+                Get.find<Settings>().prevSeasonsCount = v;
+                final anilistData = Get.find<AnilistData>();
+                anilistData.fetchAnilistHomepage();
+                anilistData.fetchAnilistMangaPage();
+                setState(() {});
+              },
+            ),
+          );
+        }),
       ]),
     );
   }

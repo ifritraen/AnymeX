@@ -31,7 +31,7 @@ class UISettings {
   bool useLegacyHeader;
   bool useGrainTexture;
   double grainIntensity;
-  bool enableImmersiveMode;
+  int prevSeasonsCount;
 
   UISettings({
     this.glowMultiplier = 1.0,
@@ -63,6 +63,7 @@ class UISettings {
     this.useGrainTexture = false,
     this.grainIntensity = 0.05,
     this.enableImmersiveMode = false,
+    this.prevSeasonsCount = 3,
   })  : homePageCards = homePageCards ??
             {
               "Continue Watching": true,
@@ -165,6 +166,8 @@ class UISettings {
           UISettingsKeys.grainIntensity.get<double>(uiDefaults.grainIntensity),
       enableImmersiveMode: UISettingsKeys.enableImmersiveMode
           .get<bool>(uiDefaults.enableImmersiveMode),
+      prevSeasonsCount: UISettingsKeys.prevSeasonsCount
+          .get<int>(uiDefaults.prevSeasonsCount),
     );
   }
 }

@@ -67,13 +67,13 @@ _SeasonInfo _getCurrentSeason() {
   }
 }
 
-List<_SeasonInfo> _getPrev3Seasons() {
+List<_SeasonInfo> _getPrevNSeasons([int count = 3]) {
   final current = _getCurrentSeason();
   final seasons = ['WINTER', 'SPRING', 'SUMMER', 'FALL'];
   int idx = seasons.indexOf(current.season);
   int year = current.year;
   List<_SeasonInfo> list = [];
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < count; i++) {
     idx--;
     if (idx < 0) {
       idx = 3;
@@ -82,6 +82,18 @@ List<_SeasonInfo> _getPrev3Seasons() {
     list.add(_SeasonInfo(seasons[idx], year));
   }
   return list;
+}
+
+String _getPrevSeasonsTopRatedTitle(int count) {
+  if (count == 3) return 'Highest Rated Previous Three Seasons';
+  if (count == 1) return 'Highest Rated Previous Season';
+  return 'Highest Rated Previous $count Seasons';
+}
+
+String _getPrevSeasonsPopularTitle(int count) {
+  if (count == 3) return 'Most Popular Previous Three Seasons';
+  if (count == 1) return 'Most Popular Previous Season';
+  return 'Most Popular Previous $count Seasons';
 }
 
 List<Media> _sortMediaByRating(List<Media> items) {
@@ -326,6 +338,9 @@ class AnilistData extends GetxController implements BaseService, OnlineService {
 
   @override
   RxList<Widget> animeWidgets(BuildContext context) {
+    final prevCount = Get.find<Settings>().prevSeasonsCount;
+    final topRatedTitle = _getPrevSeasonsTopRatedTitle(prevCount);
+    final popularTitle = _getPrevSeasonsPopularTitle(prevCount);
     return [
       buildBigCarousel(trendingAnimes, false),
       buildSection('Recently Updated', recentlyUpdatedAnimes,
@@ -338,11 +353,11 @@ class AnilistData extends GetxController implements BaseService, OnlineService {
         buildSection('Highest Rated This Season', topRatedThisSeasonAnimes,
             onSeeAll: () => _navigateToViewAll('Highest Rated This Season', topRatedThisSeasonAnimes, ItemType.anime)),
       if (topRatedPrev3SeasonsAnimes.isNotEmpty)
-        buildSection('Highest Rated Previous Three Seasons', topRatedPrev3SeasonsAnimes,
-            onSeeAll: () => _navigateToViewAll('Highest Rated Previous Three Seasons', topRatedPrev3SeasonsAnimes, ItemType.anime)),
+        buildSection(topRatedTitle, topRatedPrev3SeasonsAnimes,
+            onSeeAll: () => _navigateToViewAll(topRatedTitle, topRatedPrev3SeasonsAnimes, ItemType.anime)),
       if (popularPrev3SeasonsAnimes.isNotEmpty)
-        buildSection('Most Popular Previous Three Seasons', popularPrev3SeasonsAnimes,
-            onSeeAll: () => _navigateToViewAll('Most Popular Previous Three Seasons', popularPrev3SeasonsAnimes, ItemType.anime)),
+        buildSection(popularTitle, popularPrev3SeasonsAnimes,
+            onSeeAll: () => _navigateToViewAll(popularTitle, popularPrev3SeasonsAnimes, ItemType.anime)),
       buildSection('Recently Completed', latestAnimes,
           onSeeAll: () => _navigateToViewAll('Recently Completed', latestAnimes, ItemType.anime)),
       buildSection('Upcoming Anime', upcomingAnimes,
@@ -364,6 +379,9 @@ class AnilistData extends GetxController implements BaseService, OnlineService {
 
   @override
   RxList<Widget> mangaWidgets(BuildContext context) {
+    final prevCount = Get.find<Settings>().prevSeasonsCount;
+    final topRatedTitle = _getPrevSeasonsTopRatedTitle(prevCount);
+    final popularTitle = _getPrevSeasonsPopularTitle(prevCount);
     return [
       buildBigCarousel(trendingMangas, true),
       buildMangaSection('Trending Manga', trendingMangas,
@@ -379,11 +397,11 @@ class AnilistData extends GetxController implements BaseService, OnlineService {
         buildMangaSection('Highest Rated This Season', topRatedThisSeasonMangas,
             onSeeAll: () => _navigateToViewAll('Highest Rated This Season', topRatedThisSeasonMangas, ItemType.manga)),
       if (topRatedPrev3SeasonsMangas.isNotEmpty)
-        buildMangaSection('Highest Rated Previous Three Seasons', topRatedPrev3SeasonsMangas,
-            onSeeAll: () => _navigateToViewAll('Highest Rated Previous Three Seasons', topRatedPrev3SeasonsMangas, ItemType.manga)),
+        buildMangaSection(topRatedTitle, topRatedPrev3SeasonsMangas,
+            onSeeAll: () => _navigateToViewAll(topRatedTitle, topRatedPrev3SeasonsMangas, ItemType.manga)),
       if (popularPrev3SeasonsMangas.isNotEmpty)
-        buildMangaSection('Most Popular Previous Three Seasons', popularPrev3SeasonsMangas,
-            onSeeAll: () => _navigateToViewAll('Most Popular Previous Three Seasons', popularPrev3SeasonsMangas, ItemType.manga)),
+        buildMangaSection(popularTitle, popularPrev3SeasonsMangas,
+            onSeeAll: () => _navigateToViewAll(popularTitle, popularPrev3SeasonsMangas, ItemType.manga)),
       buildMangaSection('More Popular Manga', morePopularMangas,
           onSeeAll: () => _navigateToViewAll('More Popular Manga', morePopularMangas, ItemType.manga)),
       ...sourceController.novelSections,
@@ -403,6 +421,9 @@ class AnilistData extends GetxController implements BaseService, OnlineService {
   }
 
   RxList<Widget> novelWidgets(BuildContext context) {
+    final prevCount = Get.find<Settings>().prevSeasonsCount;
+    final topRatedTitle = _getPrevSeasonsTopRatedTitle(prevCount);
+    final popularTitle = _getPrevSeasonsPopularTitle(prevCount);
     return [
       if (trendingNovels.isNotEmpty) buildBigCarousel(trendingNovels, true),
       if (latestNovels.isNotEmpty)
@@ -421,11 +442,11 @@ class AnilistData extends GetxController implements BaseService, OnlineService {
         buildMangaSection('Highest Rated This Season', topRatedThisSeasonNovels,
             onSeeAll: () => _navigateToViewAll('Highest Rated This Season', topRatedThisSeasonNovels, ItemType.novel)),
       if (topRatedPrev3SeasonsNovels.isNotEmpty)
-        buildMangaSection('Highest Rated Previous Three Seasons', topRatedPrev3SeasonsNovels,
-            onSeeAll: () => _navigateToViewAll('Highest Rated Previous Three Seasons', topRatedPrev3SeasonsNovels, ItemType.novel)),
+        buildMangaSection(topRatedTitle, topRatedPrev3SeasonsNovels,
+            onSeeAll: () => _navigateToViewAll(topRatedTitle, topRatedPrev3SeasonsNovels, ItemType.novel)),
       if (popularPrev3SeasonsNovels.isNotEmpty)
-        buildMangaSection('Most Popular Previous Three Seasons', popularPrev3SeasonsNovels,
-            onSeeAll: () => _navigateToViewAll('Most Popular Previous Three Seasons', popularPrev3SeasonsNovels, ItemType.novel)),
+        buildMangaSection(popularTitle, popularPrev3SeasonsNovels,
+            onSeeAll: () => _navigateToViewAll(popularTitle, popularPrev3SeasonsNovels, ItemType.novel)),
       if (upcomingNovels.isNotEmpty)
         buildMangaSection('Upcoming Light Novels', upcomingNovels,
             onSeeAll: () => _navigateToViewAll('Upcoming Light Novels', upcomingNovels, ItemType.novel)),
@@ -459,7 +480,24 @@ class AnilistData extends GetxController implements BaseService, OnlineService {
   Future<void> fetchAnilistHomepage() async {
     const String url = 'https://graphql.anilist.co';
     final currSeason = _getCurrentSeason();
-    final prevSeasons = _getPrev3Seasons();
+    final prevCount = Get.find<Settings>().prevSeasonsCount;
+    final prevSeasons = _getPrevNSeasons(prevCount);
+
+    final StringBuffer prevQueries = StringBuffer();
+    for (int i = 0; i < prevSeasons.length; i++) {
+      prevQueries.write('''
+    prev${i + 1}TopRated: Page(page: 1, perPage: 15) {
+      media(type: ANIME, season: ${prevSeasons[i].season}, seasonYear: ${prevSeasons[i].year}, sort: SCORE_DESC) {
+        id title { userPreferred romaji english native } episodes type averageScore coverImage { large }
+      }
+    }
+    prev${i + 1}Popular: Page(page: 1, perPage: 15) {
+      media(type: ANIME, season: ${prevSeasons[i].season}, seasonYear: ${prevSeasons[i].year}, sort: POPULARITY_DESC) {
+        id title { userPreferred romaji english native } episodes type averageScore coverImage { large }
+      }
+    }
+''');
+    }
 
     final String query = '''
   query {
@@ -571,36 +609,7 @@ class AnilistData extends GetxController implements BaseService, OnlineService {
         id title { userPreferred romaji english native } episodes type averageScore coverImage { large }
       }
     }
-    prev1TopRated: Page(page: 1, perPage: 15) {
-      media(type: ANIME, season: ${prevSeasons[0].season}, seasonYear: ${prevSeasons[0].year}, sort: SCORE_DESC) {
-        id title { userPreferred romaji english native } episodes type averageScore coverImage { large }
-      }
-    }
-    prev2TopRated: Page(page: 1, perPage: 15) {
-      media(type: ANIME, season: ${prevSeasons[1].season}, seasonYear: ${prevSeasons[1].year}, sort: SCORE_DESC) {
-        id title { userPreferred romaji english native } episodes type averageScore coverImage { large }
-      }
-    }
-    prev3TopRated: Page(page: 1, perPage: 15) {
-      media(type: ANIME, season: ${prevSeasons[2].season}, seasonYear: ${prevSeasons[2].year}, sort: SCORE_DESC) {
-        id title { userPreferred romaji english native } episodes type averageScore coverImage { large }
-      }
-    }
-    prev1Popular: Page(page: 1, perPage: 15) {
-      media(type: ANIME, season: ${prevSeasons[0].season}, seasonYear: ${prevSeasons[0].year}, sort: POPULARITY_DESC) {
-        id title { userPreferred romaji english native } episodes type averageScore coverImage { large }
-      }
-    }
-    prev2Popular: Page(page: 1, perPage: 15) {
-      media(type: ANIME, season: ${prevSeasons[1].season}, seasonYear: ${prevSeasons[1].year}, sort: POPULARITY_DESC) {
-        id title { userPreferred romaji english native } episodes type averageScore coverImage { large }
-      }
-    }
-    prev3Popular: Page(page: 1, perPage: 15) {
-      media(type: ANIME, season: ${prevSeasons[2].season}, seasonYear: ${prevSeasons[2].year}, sort: POPULARITY_DESC) {
-        id title { userPreferred romaji english native } episodes type averageScore coverImage { large }
-      }
-    }
+    ${prevQueries.toString()}
   }
 ''';
 
@@ -639,20 +648,19 @@ class AnilistData extends GetxController implements BaseService, OnlineService {
         topRatedThisSeasonAnimes.value =
             parseMediaList(responseData['topRatedThisSeason']['media']);
       }
-      if (responseData['prev1TopRated'] != null) {
-        topRatedPrev3SeasonsAnimes.value = _sortMediaByRating([
-          ...parseMediaList(responseData['prev1TopRated']['media']),
-          ...parseMediaList(responseData['prev2TopRated']['media']),
-          ...parseMediaList(responseData['prev3TopRated']['media']),
-        ]);
+      final List<Media> combinedTopRated = [];
+      final List<Media> combinedPopular = [];
+      for (int i = 1; i <= prevCount; i++) {
+        if (responseData['prev${i}TopRated'] != null) {
+          combinedTopRated.addAll(parseMediaList(responseData['prev${i}TopRated']['media']));
+        }
+        if (responseData['prev${i}Popular'] != null) {
+          combinedPopular.addAll(parseMediaList(responseData['prev${i}Popular']['media']));
+        }
       }
-      if (responseData['prev1Popular'] != null) {
-        popularPrev3SeasonsAnimes.value = _sortMediaByPopularity([
-          ...parseMediaList(responseData['prev1Popular']['media']),
-          ...parseMediaList(responseData['prev2Popular']['media']),
-          ...parseMediaList(responseData['prev3Popular']['media']),
-        ]);
-      }
+      topRatedPrev3SeasonsAnimes.value = _sortMediaByRating(combinedTopRated);
+      popularPrev3SeasonsAnimes.value = _sortMediaByPopularity(combinedPopular);
+    }
     } else {
       throw Exception('Failed to load AniList data: ${response.statusCode}');
     }
@@ -661,7 +669,34 @@ class AnilistData extends GetxController implements BaseService, OnlineService {
   Future<void> fetchAnilistMangaPage() async {
     const String url = 'https://graphql.anilist.co';
     final currSeason = _getCurrentSeason();
-    final prevSeasons = _getPrev3Seasons();
+    final prevCount = Get.find<Settings>().prevSeasonsCount;
+    final prevSeasons = _getPrevNSeasons(prevCount);
+
+    final StringBuffer prevQueries = StringBuffer();
+    for (int i = 0; i < prevSeasons.length; i++) {
+      prevQueries.write('''
+    prev${i + 1}TopRatedManga: Page(page: 1, perPage: \$perPage) {
+      media(type: MANGA, season: ${prevSeasons[i].season}, seasonYear: ${prevSeasons[i].year}, sort: SCORE_DESC) {
+        id title { userPreferred romaji english native } coverImage { large } type averageScore
+      }
+    }
+    prev${i + 1}PopularManga: Page(page: 1, perPage: \$perPage) {
+      media(type: MANGA, season: ${prevSeasons[i].season}, seasonYear: ${prevSeasons[i].year}, sort: POPULARITY_DESC) {
+        id title { userPreferred romaji english native } coverImage { large } type averageScore
+      }
+    }
+    prev${i + 1}TopRatedNovels: Page(page: 1, perPage: \$perPage) {
+      media(type: MANGA, format: NOVEL, season: ${prevSeasons[i].season}, seasonYear: ${prevSeasons[i].year}, sort: SCORE_DESC) {
+        id title { userPreferred romaji english native } coverImage { large } type averageScore
+      }
+    }
+    prev${i + 1}PopularNovels: Page(page: 1, perPage: \$perPage) {
+      media(type: MANGA, format: NOVEL, season: ${prevSeasons[i].season}, seasonYear: ${prevSeasons[i].year}, sort: POPULARITY_DESC) {
+        id title { userPreferred romaji english native } coverImage { large } type averageScore
+      }
+    }
+''');
+    }
 
     final String query = '''
   query CombinedMangaQueries(\$perPage: Int) {
@@ -922,79 +957,9 @@ averageScore
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
-    prev1TopRatedManga: Page(page: 1, perPage: \$perPage) {
-      media(type: MANGA, season: ${prevSeasons[0].season}, seasonYear: ${prevSeasons[0].year}, sort: SCORE_DESC) {
-        id title { userPreferred romaji english native } coverImage { large } type averageScore
-      }
-    }
-    prev2TopRatedManga: Page(page: 1, perPage: \$perPage) {
-      media(type: MANGA, season: ${prevSeasons[1].season}, seasonYear: ${prevSeasons[1].year}, sort: SCORE_DESC) {
-        id title { userPreferred romaji english native } coverImage { large } type averageScore
-      }
-    }
-    prev3TopRatedManga: Page(page: 1, perPage: \$perPage) {
-      media(type: MANGA, season: ${prevSeasons[2].season}, seasonYear: ${prevSeasons[2].year}, sort: SCORE_DESC) {
-        id title { userPreferred romaji english native } coverImage { large } type averageScore
-      }
-    }
-    prev1PopularManga: Page(page: 1, perPage: \$perPage) {
-      media(type: MANGA, season: ${prevSeasons[0].season}, seasonYear: ${prevSeasons[0].year}, sort: POPULARITY_DESC) {
-        id title { userPreferred romaji english native } coverImage { large } type averageScore
-      }
-    }
-    prev2PopularManga: Page(page: 1, perPage: \$perPage) {
-      media(type: MANGA, season: ${prevSeasons[1].season}, seasonYear: ${prevSeasons[1].year}, sort: POPULARITY_DESC) {
-        id title { userPreferred romaji english native } coverImage { large } type averageScore
-      }
-    }
-    prev3PopularManga: Page(page: 1, perPage: \$perPage) {
-      media(type: MANGA, season: ${prevSeasons[2].season}, seasonYear: ${prevSeasons[2].year}, sort: POPULARITY_DESC) {
-        id title { userPreferred romaji english native } coverImage { large } type averageScore
-      }
-    }
-
-    popularThisSeasonNovels: Page(page: 1, perPage: \$perPage) {
-      media(type: MANGA, format: NOVEL, season: ${currSeason.season}, seasonYear: ${currSeason.year}, sort: POPULARITY_DESC) {
-        id title { userPreferred romaji english native } coverImage { large } type averageScore
-      }
-    }
-    topRatedThisSeasonNovels: Page(page: 1, perPage: \$perPage) {
-      media(type: MANGA, format: NOVEL, season: ${currSeason.season}, seasonYear: ${currSeason.year}, sort: SCORE_DESC) {
-        id title { userPreferred romaji english native } coverImage { large } type averageScore
-      }
-    }
-    prev1TopRatedNovels: Page(page: 1, perPage: \$perPage) {
-      media(type: MANGA, format: NOVEL, season: ${prevSeasons[0].season}, seasonYear: ${prevSeasons[0].year}, sort: SCORE_DESC) {
-        id title { userPreferred romaji english native } coverImage { large } type averageScore
-      }
-    }
-    prev2TopRatedNovels: Page(page: 1, perPage: \$perPage) {
-      media(type: MANGA, format: NOVEL, season: ${prevSeasons[1].season}, seasonYear: ${prevSeasons[1].year}, sort: SCORE_DESC) {
-        id title { userPreferred romaji english native } coverImage { large } type averageScore
-      }
-    }
-    prev3TopRatedNovels: Page(page: 1, perPage: \$perPage) {
-      media(type: MANGA, format: NOVEL, season: ${prevSeasons[2].season}, seasonYear: ${prevSeasons[2].year}, sort: SCORE_DESC) {
-        id title { userPreferred romaji english native } coverImage { large } type averageScore
-      }
-    }
-    prev1PopularNovels: Page(page: 1, perPage: \$perPage) {
-      media(type: MANGA, format: NOVEL, season: ${prevSeasons[0].season}, seasonYear: ${prevSeasons[0].year}, sort: POPULARITY_DESC) {
-        id title { userPreferred romaji english native } coverImage { large } type averageScore
-      }
-    }
-    prev2PopularNovels: Page(page: 1, perPage: \$perPage) {
-      media(type: MANGA, format: NOVEL, season: ${prevSeasons[1].season}, seasonYear: ${prevSeasons[1].year}, sort: POPULARITY_DESC) {
-        id title { userPreferred romaji english native } coverImage { large } type averageScore
-      }
-    }
-    prev3PopularNovels: Page(page: 1, perPage: \$perPage) {
-      media(type: MANGA, format: NOVEL, season: ${prevSeasons[2].season}, seasonYear: ${prevSeasons[2].year}, sort: POPULARITY_DESC) {
-        id title { userPreferred romaji english native } coverImage { large } type averageScore
-      }
-    }
+    ${prevQueries.toString()}
   }
-''';
+'';
 
     final token = AuthKeys.authToken.get<String?>();
     final headers = {
@@ -1060,20 +1025,29 @@ averageScore
         topRatedThisSeasonMangas.value =
             parseMediaList(responseData['topRatedThisSeasonManga']['media']);
       }
-      if (responseData['prev1TopRatedManga'] != null) {
-        topRatedPrev3SeasonsMangas.value = _sortMediaByRating([
-          ...parseMediaList(responseData['prev1TopRatedManga']['media']),
-          ...parseMediaList(responseData['prev2TopRatedManga']['media']),
-          ...parseMediaList(responseData['prev3TopRatedManga']['media']),
-        ]);
+
+      final List<Media> combinedMangaTopRated = [];
+      final List<Media> combinedMangaPopular = [];
+      final List<Media> combinedNovelsTopRated = [];
+      final List<Media> combinedNovelsPopular = [];
+
+      for (int i = 1; i <= prevCount; i++) {
+        if (responseData['prev${i}TopRatedManga'] != null) {
+          combinedMangaTopRated.addAll(parseMediaList(responseData['prev${i}TopRatedManga']['media']));
+        }
+        if (responseData['prev${i}PopularManga'] != null) {
+          combinedMangaPopular.addAll(parseMediaList(responseData['prev${i}PopularManga']['media']));
+        }
+        if (responseData['prev${i}TopRatedNovels'] != null) {
+          combinedNovelsTopRated.addAll(parseMediaList(responseData['prev${i}TopRatedNovels']['media']));
+        }
+        if (responseData['prev${i}PopularNovels'] != null) {
+          combinedNovelsPopular.addAll(parseMediaList(responseData['prev${i}PopularNovels']['media']));
+        }
       }
-      if (responseData['prev1PopularManga'] != null) {
-        popularPrev3SeasonsMangas.value = _sortMediaByPopularity([
-          ...parseMediaList(responseData['prev1PopularManga']['media']),
-          ...parseMediaList(responseData['prev2PopularManga']['media']),
-          ...parseMediaList(responseData['prev3PopularManga']['media']),
-        ]);
-      }
+
+      topRatedPrev3SeasonsMangas.value = _sortMediaByRating(combinedMangaTopRated);
+      popularPrev3SeasonsMangas.value = _sortMediaByPopularity(combinedMangaPopular);
 
       if (responseData['popularThisSeasonNovels'] != null) {
         popularThisSeasonNovels.value =
@@ -1083,20 +1057,10 @@ averageScore
         topRatedThisSeasonNovels.value =
             parseMediaList(responseData['topRatedThisSeasonNovels']['media']);
       }
-      if (responseData['prev1TopRatedNovels'] != null) {
-        topRatedPrev3SeasonsNovels.value = _sortMediaByRating([
-          ...parseMediaList(responseData['prev1TopRatedNovels']['media']),
-          ...parseMediaList(responseData['prev2TopRatedNovels']['media']),
-          ...parseMediaList(responseData['prev3TopRatedNovels']['media']),
-        ]);
-      }
-      if (responseData['prev1PopularNovels'] != null) {
-        popularPrev3SeasonsNovels.value = _sortMediaByPopularity([
-          ...parseMediaList(responseData['prev1PopularNovels']['media']),
-          ...parseMediaList(responseData['prev2PopularNovels']['media']),
-          ...parseMediaList(responseData['prev3PopularNovels']['media']),
-        ]);
-      }
+
+      topRatedPrev3SeasonsNovels.value = _sortMediaByRating(combinedNovelsTopRated);
+      popularPrev3SeasonsNovels.value = _sortMediaByPopularity(combinedNovelsPopular);
+    }
     } else {
       throw Exception(
           'Failed to load AniList manga data: ${response.statusCode}');
