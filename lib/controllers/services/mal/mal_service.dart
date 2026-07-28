@@ -7,6 +7,7 @@ import 'package:anymex/controllers/offline/offline_storage_controller.dart';
 import 'package:anymex/controllers/service_handler/params.dart';
 import 'package:anymex/controllers/service_handler/service_handler.dart';
 import 'package:anymex/controllers/services/widgets/widgets_builders.dart';
+import 'package:anymex/screens/common/view_all_grid_screen.dart';
 import 'package:anymex/screens/community/community_recommendations_page.dart';
 import 'package:anymex/controllers/services/community_service.dart';
 import 'package:anymex/controllers/settings/methods.dart';
