@@ -213,7 +213,7 @@ class _ExtensionListTileWidgetState extends State<ExtensionListTileWidget> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    widget.source.name!,
+                    widget.source.name ?? 'Unknown Extension',
                     style: TextStyle(
                       color: theme.onSurface,
                       fontFamily: 'Poppins',

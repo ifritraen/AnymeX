@@ -381,8 +381,8 @@ class Settings extends GetxController {
     final defaultTabs = isExtensionsService
         ? ['Library', 'Anime', 'Manga', 'Novel', 'Extensions']
         : (isDesktop
-            ? ['Home', 'Anime', 'Manga', 'Library', 'Extensions']
-            : ['Home', 'Anime', 'Manga', 'Library']);
+            ? ['Home', 'Anime', 'Manga', 'Novel', 'Library', 'Extensions']
+            : ['Home', 'Anime', 'Manga', 'Novel', 'Library']);
 
     if (raw.isEmpty) {
       return defaultTabs;

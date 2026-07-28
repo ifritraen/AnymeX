@@ -316,32 +316,53 @@ class SimklService extends GetxController
             child: AnymexProgressIndicator(),
           )
         else ...[
-          // TappableSearchBar(
-          //   onSubmitted: () {
-          //     // navigate(() => const SearchPage(
-          //     //       searchTerm: "",
-          //     //       isManga: false,
-          //     //     ));
-          //     searchTypeSheet(context, "");
-          //   },
-          //   chipLabel: ("MOVIES"),
-          //   hintText: "Search Movie...",
-          // ),
           buildBigCarousel(trendingMovies.value.sublist(0, 10), false,
               type: CarouselType.simkl),
           if (trendingMovies.value.isNotEmpty)
             ReusableCarousel(
-                data: trendingMovies.value.sublist(0, 10),
-                title: "Trending Movies"),
+                data: trendingMovies.value,
+                title: "Trending Movies",
+                onSeeAll: () => navigate(() => ViewAllGridScreen(
+                      title: "Trending Movies",
+                      mediaList: trendingMovies.value,
+                      itemType: ItemType.anime,
+                    ))),
           if (koreanMovies.value.isNotEmpty)
-            ReusableCarousel(data: koreanMovies.value, title: "Korean Movies"),
+            ReusableCarousel(
+                data: koreanMovies.value,
+                title: "Korean Movies",
+                onSeeAll: () => navigate(() => ViewAllGridScreen(
+                      title: "Korean Movies",
+                      mediaList: koreanMovies.value,
+                      itemType: ItemType.anime,
+                    ))),
           if (usMovies.value.isNotEmpty)
-            ReusableCarousel(data: usMovies.value, title: "US Movies"),
+            ReusableCarousel(
+                data: usMovies.value,
+                title: "US Movies",
+                onSeeAll: () => navigate(() => ViewAllGridScreen(
+                      title: "US Movies",
+                      mediaList: usMovies.value,
+                      itemType: ItemType.anime,
+                    ))),
           if (ukMovies.value.isNotEmpty)
-            ReusableCarousel(data: ukMovies.value, title: "UK Movies"),
+            ReusableCarousel(
+                data: ukMovies.value,
+                title: "UK Movies",
+                onSeeAll: () => navigate(() => ViewAllGridScreen(
+                      title: "UK Movies",
+                      mediaList: ukMovies.value,
+                      itemType: ItemType.anime,
+                    ))),
           if (canadaMovies.value.isNotEmpty)
             ReusableCarousel(
-                data: canadaMovies.value, title: "Canadian Movies"),
+                data: canadaMovies.value,
+                title: "Canadian Movies",
+                onSeeAll: () => navigate(() => ViewAllGridScreen(
+                      title: "Canadian Movies",
+                      mediaList: canadaMovies.value,
+                      itemType: ItemType.anime,
+                    ))),
           Obx(() {
             final list = communityService.getFilteredCommunityMovies();
             return buildUnderratedSection('Community Recommendations', list,
@@ -360,33 +381,62 @@ class SimklService extends GetxController
             child: AnymexProgressIndicator(),
           )
         else ...[
-          // CustomSearchBar(
-          //   onSubmitted: (val) {
-          //     navigate(() => SearchPage(
-          //           searchTerm: val,
-          //           isManga: false,
-          //         ));
-          //   },
-          //   suffixIconWidget: buildChip("SERIES"),
-          //   disableIcons: true,
-          //   hintText: "Search Series...",
-          // ),
           buildBigCarousel(trendingSeries.value.sublist(0, 10), false,
               type: CarouselType.simkl),
           if (trendingSeries.value.isNotEmpty)
             ReusableCarousel(
-                data: trendingSeries.value.sublist(0, 10),
-                title: "Trending Series"),
+                data: trendingSeries.value,
+                title: "Trending Series",
+                onSeeAll: () => navigate(() => ViewAllGridScreen(
+                      title: "Trending Series",
+                      mediaList: trendingSeries.value,
+                      itemType: ItemType.manga,
+                    ))),
           if (koreanSeries.value.isNotEmpty)
-            ReusableCarousel(data: koreanSeries.value, title: "K-Dramas"),
+            ReusableCarousel(
+                data: koreanSeries.value,
+                title: "K-Dramas",
+                onSeeAll: () => navigate(() => ViewAllGridScreen(
+                      title: "K-Dramas",
+                      mediaList: koreanSeries.value,
+                      itemType: ItemType.manga,
+                    ))),
           if (japaneseSeries.value.isNotEmpty)
-            ReusableCarousel(data: japaneseSeries.value, title: "J-Dramas"),
+            ReusableCarousel(
+                data: japaneseSeries.value,
+                title: "J-Dramas",
+                onSeeAll: () => navigate(() => ViewAllGridScreen(
+                      title: "J-Dramas",
+                      mediaList: japaneseSeries.value,
+                      itemType: ItemType.manga,
+                    ))),
           if (usSeries.value.isNotEmpty)
-            ReusableCarousel(data: usSeries.value, title: "US Shows"),
+            ReusableCarousel(
+                data: usSeries.value,
+                title: "US Shows",
+                onSeeAll: () => navigate(() => ViewAllGridScreen(
+                      title: "US Shows",
+                      mediaList: usSeries.value,
+                      itemType: ItemType.manga,
+                    ))),
           if (ukSeries.value.isNotEmpty)
-            ReusableCarousel(data: ukSeries.value, title: "UK Shows"),
+            ReusableCarousel(
+                data: ukSeries.value,
+                title: "UK Shows",
+                onSeeAll: () => navigate(() => ViewAllGridScreen(
+                      title: "UK Shows",
+                      mediaList: ukSeries.value,
+                      itemType: ItemType.manga,
+                    ))),
           if (canadaSeries.value.isNotEmpty)
-            ReusableCarousel(data: canadaSeries.value, title: "Canadian Shows"),
+            ReusableCarousel(
+                data: canadaSeries.value,
+                title: "Canadian Shows",
+                onSeeAll: () => navigate(() => ViewAllGridScreen(
+                      title: "Canadian Shows",
+                      mediaList: canadaSeries.value,
+                      itemType: ItemType.manga,
+                    ))),
           Obx(() {
             final list = communityService.getFilteredCommunityShows();
             return buildUnderratedSection('Community Recommendations', list,

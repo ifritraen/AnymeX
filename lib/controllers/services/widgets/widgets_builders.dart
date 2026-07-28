@@ -28,7 +28,8 @@ Widget buildSection(String title, dynamic data,
     {DataVariant variant = DataVariant.regular,
     bool isLoading = false,
     ItemType type = ItemType.anime,
-    Source? source}) {
+    Source? source,
+    VoidCallback? onSeeAll}) {
   if (data is Stream) {
     return StreamBuilder(
       stream: data,
@@ -43,6 +44,7 @@ Widget buildSection(String title, dynamic data,
           variant: variant,
           isLoading: isLoading,
           source: source,
+          onSeeAll: onSeeAll,
         );
       },
     );
@@ -54,6 +56,7 @@ Widget buildSection(String title, dynamic data,
     variant: variant,
     isLoading: isLoading,
     source: source,
+    onSeeAll: onSeeAll,
   );
 }
 
@@ -104,12 +107,13 @@ Widget buildBigCarousel(List<Media> data, bool isManga, {CarouselType? type}) {
 }
 
 Widget buildMangaSection(String title, List<Media> data,
-    {bool isAnilist = false}) {
+    {bool isAnilist = false, VoidCallback? onSeeAll}) {
   return ReusableCarousel(
     data: data,
     title: title,
     type: ItemType.manga,
     variant: isAnilist ? DataVariant.anilist : DataVariant.regular,
+    onSeeAll: onSeeAll,
   );
 }
 

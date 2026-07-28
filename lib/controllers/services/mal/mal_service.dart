@@ -106,7 +106,12 @@ class MalService extends GetxController implements BaseService, OnlineService {
     return list.isEmpty
         ? const AnymexProgressIndicator()
         : buildSection(title, list,
-            type: isManga ? ItemType.manga : ItemType.anime);
+            type: isManga ? ItemType.manga : ItemType.anime,
+            onSeeAll: () => navigate(() => ViewAllGridScreen(
+                  title: title,
+                  mediaList: list,
+                  itemType: isManga ? ItemType.manga : ItemType.anime,
+                )));
   }
 
   @override
@@ -117,7 +122,7 @@ class MalService extends GetxController implements BaseService, OnlineService {
                 children: [
                   buildBigCarousel(trendingAnimes, false),
                   buildSectionIfNotEmpty("Trending Anime", trendingAnimes),
-                  buildSectionIfNotEmpty("Popular Anime", popularAnimes),
+                  buildSectionIfNotEmpty("Popular This Season", popularAnimes),
                   buildSectionIfNotEmpty("Top Anime", topAnimes),
                   buildSectionIfNotEmpty("Upcoming Anime", upcomingAnimes),
                   // Underrated Anime section at the bottom (filtered for logged-in users)
