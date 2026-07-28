@@ -194,14 +194,14 @@ class ColorProfileManager {
   }
 
   static Future<void> saveCustomProfiles(Map<String, Map<String, int>> customProfiles) async {
-    await PlayerUiKeys.customColorProfiles.set(customProfiles);
+    PlayerUiKeys.customColorProfiles.set(customProfiles);
   }
 
   static Future<void> saveCustomProfile(String name, Map<String, int> settings) async {
     final customProfiles = getCustomProfiles();
     customProfiles[name] = settings;
     await saveCustomProfiles(customProfiles);
-    await PlayerUiKeys.customColorProfile.set(settings);
+    PlayerUiKeys.customColorProfile.set(settings);
   }
 
   static Future<void> deleteCustomProfile(String name) async {
@@ -209,7 +209,7 @@ class ColorProfileManager {
     customProfiles.remove(name);
     await saveCustomProfiles(customProfiles);
     if (customProfiles.isNotEmpty) {
-      await PlayerUiKeys.customColorProfile.set(customProfiles.values.first);
+      PlayerUiKeys.customColorProfile.set(customProfiles.values.first);
     }
   }
 
