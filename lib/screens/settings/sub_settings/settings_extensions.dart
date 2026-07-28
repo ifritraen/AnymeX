@@ -168,7 +168,8 @@ class _SettingsExtensionsState extends State<SettingsExtensions> {
   Widget build(BuildContext context) {
     return Glow(
       child: Scaffold(
-        body: Obx(() {
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        body: Builder(builder: (context) {
           final displayList = _displayManagers;
           if (displayList.isEmpty) {
             return Column(children: [
@@ -222,7 +223,7 @@ class _SettingsExtensionsState extends State<SettingsExtensions> {
             Expanded(child: _buildBody()),
           ]);
         }),
-        floatingActionButton: Obx(() => _buildFab() ?? const SizedBox.shrink()),
+        floatingActionButton: _buildFab(),
       ),
     );
   }

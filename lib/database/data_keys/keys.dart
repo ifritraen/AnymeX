@@ -60,6 +60,7 @@ enum PlayerUiKeys {
   shadersEnabled,
   cacheDays,
   customColorProfile,
+  customColorProfiles,
 }
 
 enum ReaderKeys {
@@ -159,6 +160,7 @@ enum SourceKeys {
   mangaExtensionOrder,
   novelExtensionOrder,
   extensionsEnabled,
+  extensionFeedConfig,
 }
 
 enum PluginKeys {
@@ -289,6 +291,7 @@ enum UISettingsKeys {
   grainIntensity,
   enableImmersiveMode,
   customColorProfile,
+  customColorProfiles,
 }
 
 enum DownloadKeys {

@@ -1808,9 +1808,21 @@ class PlayerController extends GetxController with WidgetsBindingObserver {
     });
   }
 
+  Timer? _instantSeekThrottle;
+  Duration? _pendingInstantSeek;
+
   void seekToInstant(Duration pos) {
     currentPosition.value = pos;
-    _seekTo(pos);
+    _pendingInstantSeek = pos;
+
+    if (_instantSeekThrottle == null || !_instantSeekThrottle!.isActive) {
+      _seekTo(pos);
+      _instantSeekThrottle = Timer(const Duration(milliseconds: 16), () {
+        if (_pendingInstantSeek != null && _pendingInstantSeek != pos) {
+          _seekTo(_pendingInstantSeek!);
+        }
+      });
+    }
   }
 
   void _seekTo(Duration pos) async => await _basePlayer.seek(pos);

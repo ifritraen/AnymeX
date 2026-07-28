@@ -12,6 +12,7 @@ import 'package:anymex/screens/search/widgets/inline_search_history.dart';
 import 'package:anymex/screens/search/widgets/search_widgets.dart';
 import 'package:anymex/screens/settings/misc/sauce_finder_view.dart';
 import 'package:anymex/utils/extension_utils.dart';
+import 'package:anymex/widgets/common/extension_feed_sheet.dart';
 import 'package:anymex/utils/function.dart';
 import 'package:anymex/utils/logger.dart';
 import 'package:anymex/utils/theme_extensions.dart';
@@ -395,16 +396,42 @@ class _SearchPageState extends State<SearchPage>
     }
 
     final installed = effectiveType.extensions;
-    final items = installed.map((s) {
-      final Future<List<dynamic>> future = (searchQuery.isNotEmpty
-              ? s.methods.search(searchQuery, 1, [])
-              : s.methods.getPopular(1))
-          .then<List<dynamic>>((res) {
-        return res.list;
-      }).catchError((err) {
-        return <dynamic>[];
+    final configs = ExtensionFeedManager.getConfig(effectiveType, installed);
+
+    final activeItems = <({Source source, ExtensionFeedItemConfig config})>[];
+    for (final cfg in configs) {
+      if (!cfg.enabled) continue;
+      final src = installed.firstWhereOrNull((s) => s.id == cfg.sourceId);
+      if (src != null) {
+        activeItems.add((source: src, config: cfg));
+      }
+    }
+
+    Future<List<dynamic>> previousFuture = Future.value(<dynamic>[]);
+
+    final items = activeItems.map((item) {
+      final s = item.source;
+      final cfg = item.config;
+      final currentPrevious = previousFuture;
+
+      final Future<List<dynamic>> future = currentPrevious.then((_) async {
+        try {
+          if (searchQuery.isNotEmpty) {
+            final res = await s.methods.search(searchQuery, 1, []);
+            return res.list;
+          } else if (cfg.feedType == 'search' && cfg.searchQuery.isNotEmpty) {
+            final res = await s.methods.search(cfg.searchQuery, 1, []);
+            return res.list;
+          } else {
+            final res = await s.methods.getPopular(1);
+            return res.list;
+          }
+        } catch (err) {
+          return <dynamic>[];
+        }
       });
 
+      previousFuture = future;
       return ExtensionSearchItem(source: s, future: future);
     }).toList();
 
@@ -753,6 +780,31 @@ class _SearchPageState extends State<SearchPage>
                                 ? context.colors.onPrimary
                                 : context.colors.onSurface.opaque(0.6, iReallyMeanIt: true),
                           ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    GestureDetector(
+                      onTap: () {
+                        ExtensionFeedSheet.show(
+                          context,
+                          itemType: effectiveType,
+                          installedSources: installedSources,
+                          onConfigSaved: () {
+                            _performSearch();
+                          },
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: context.colors.primary.opaque(0.15, iReallyMeanIt: true),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.tune_rounded,
+                          size: 16,
+                          color: context.colors.primary,
                         ),
                       ),
                     ),

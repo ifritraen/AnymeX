@@ -151,7 +151,9 @@ class _ExtensionScreenState extends State<ExtensionScreen>
     return Glow(
       disabled: widget.disableGlow,
       child: Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: widget.isTabScreen
+            ? Colors.transparent
+            : Theme.of(context).colorScheme.surface,
         body: Stack(
           children: [
             mainContent,

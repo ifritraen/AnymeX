@@ -2,12 +2,12 @@ import 'package:anymex/controllers/source/source_controller.dart';
 import 'package:anymex/screens/search/source_search_page.dart';
 import 'package:anymex/utils/function.dart';
 import 'package:anymex/utils/theme_extensions.dart';
+import 'package:anymex/widgets/common/extension_feed_sheet.dart';
 import 'package:anymex/widgets/common/future_reusable_carousel.dart';
 import 'package:anymex/widgets/common/search_bar.dart';
 import 'package:anymex/widgets/custom_widgets/anymex_image.dart';
 import 'package:anymex/widgets/custom_widgets/custom_text.dart';
 import 'package:anymex/widgets/helper/tv_wrapper.dart';
-import 'package:anymex_extension_runtime_bridge/Models/Source.dart';
 import 'package:anymex_extension_runtime_bridge/anymex_extension_runtime_bridge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_iconly/flutter_iconly.dart';
@@ -56,6 +56,44 @@ class _InstalledExtensionsGridViewState
     }).toList();
 
     final title = widget.itemType.name.capitalizeFirst ?? '';
+    final configs = ExtensionFeedManager.getConfig(widget.itemType, filteredSources);
+
+    final orderedSources = <Source>[];
+    for (final cfg in configs) {
+      if (!cfg.enabled) continue;
+      final src = filteredSources.firstWhereOrNull((s) => (s.id ?? s.name ?? '') == cfg.sourceId);
+      if (src != null) {
+        orderedSources.add(src);
+      }
+    }
+
+    final Map<String, Future<List<dynamic>>> futuresMap = {};
+    Future<List<dynamic>> previousFuture = Future.value(<dynamic>[]);
+    for (final s in orderedSources) {
+      final cfg = configs.firstWhere(
+        (c) => c.sourceId == (s.id ?? s.name ?? ''),
+        orElse: () => ExtensionFeedItemConfig(sourceId: s.id ?? s.name ?? ''),
+      );
+      final currentPrevious = previousFuture;
+      final future = currentPrevious.then((_) async {
+        try {
+          if (cfg.feedType == 'search' && cfg.searchQuery.isNotEmpty) {
+            final res = await s.methods.search(cfg.searchQuery, 1, []);
+            return res.list;
+          } else {
+            final res = await s.methods.getPopular(1);
+            return res.list;
+          }
+        } catch (_) {
+          return <dynamic>[];
+        }
+      });
+      previousFuture = future;
+      final key = s.id ?? s.name ?? '';
+      if (key.isNotEmpty) {
+        futuresMap[key] = future;
+      }
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -75,7 +113,7 @@ class _InstalledExtensionsGridViewState
                   },
                   onSubmitted: (val) {
                     if (val.trim().isEmpty) return;
-                    final exactSource = filteredSources.firstOrNull;
+                    final exactSource = orderedSources.firstOrNull ?? filteredSources.firstOrNull;
                     final sourceController = Get.find<SourceController>();
                     if (exactSource != null) {
                       sourceController.setActiveSource(exactSource);
@@ -113,7 +151,7 @@ class _InstalledExtensionsGridViewState
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      '${filteredSources.length}',
+                      '${orderedSources.length}',
                       style: TextStyle(
                         fontFamily: 'Poppins-Bold',
                         fontSize: 13,
@@ -123,22 +161,42 @@ class _InstalledExtensionsGridViewState
                   ],
                 ),
               ),
+              const SizedBox(width: 6),
+              IconButton(
+                onPressed: () {
+                  ExtensionFeedSheet.show(
+                    context,
+                    itemType: widget.itemType,
+                    installedSources: widget.sources,
+                    onConfigSaved: () {
+                      setState(() {});
+                    },
+                  );
+                },
+                icon: Icon(
+                  Icons.tune_rounded,
+                  color: context.colors.primary,
+                  size: 20,
+                ),
+                tooltip: 'Configure Feed',
+              ),
             ],
           ),
           const SizedBox(height: 12),
-          if (filteredSources.isEmpty)
+          if (orderedSources.isEmpty)
             _buildEmptyState(context, title)
           else
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: filteredSources.length,
+              itemCount: orderedSources.length,
               separatorBuilder: (context, index) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
-                final source = filteredSources[index];
+                final source = orderedSources[index];
                 return _ExtensionSection(
                   source: source,
                   itemType: widget.itemType,
+                  future: futuresMap[source.id ?? source.name ?? ''],
                 );
               },
             ),
@@ -205,10 +263,12 @@ class _InstalledExtensionsGridViewState
 class _ExtensionSection extends StatelessWidget {
   final Source source;
   final ItemType itemType;
+  final Future<List<dynamic>>? future;
 
   const _ExtensionSection({
     required this.source,
     required this.itemType,
+    this.future,
   });
 
   @override
@@ -216,7 +276,7 @@ class _ExtensionSection extends StatelessWidget {
     final theme = Theme.of(context);
     final sourceController = Get.find<SourceController>();
 
-    final Future<List<dynamic>> latestFuture =
+    final Future<List<dynamic>> latestFuture = future ??
         source.methods.getPopular(1).then<List<dynamic>>((res) => res.list).catchError((_) => <dynamic>[]);
 
     return Column(

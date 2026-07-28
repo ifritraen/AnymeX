@@ -172,16 +172,82 @@ class ColorProfileManager {
     "custom": Icons.tune,
   };
 
-  Future<void> applyColorProfile(String profile, dynamic player) async {
-    if (profile.toLowerCase() == 'custom') {
-      final savedMap = PlayerUiKeys.customColorProfile.get<Map<String, dynamic>>({});
-      if (savedMap.isNotEmpty) {
-        final converted = savedMap.map((k, v) => MapEntry(k.toString(), (v as num).toInt()));
-        await applyCustomSettings(converted, player);
-        return;
+  static Map<String, Map<String, int>> getCustomProfiles() {
+    final raw = PlayerUiKeys.customColorProfiles.get<Map<String, dynamic>>({});
+    Map<String, Map<String, int>> result = {};
+    if (raw.isNotEmpty) {
+      raw.forEach((name, map) {
+        if (map is Map) {
+          result[name.toString()] = map.map((k, v) => MapEntry(k.toString(), (v as num).toInt()));
+        }
+      });
+    }
+    if (result.isEmpty) {
+      final oldSingle = PlayerUiKeys.customColorProfile.get<Map<String, dynamic>>({});
+      if (oldSingle.isNotEmpty) {
+        final converted = oldSingle.map((k, v) => MapEntry(k.toString(), (v as num).toInt()));
+        result["Custom 1"] = converted;
+        PlayerUiKeys.customColorProfiles.set(result);
       }
     }
-    final settings = profiles[profile.toLowerCase()];
+    return result;
+  }
+
+  static Future<void> saveCustomProfiles(Map<String, Map<String, int>> customProfiles) async {
+    await PlayerUiKeys.customColorProfiles.set(customProfiles);
+  }
+
+  static Future<void> saveCustomProfile(String name, Map<String, int> settings) async {
+    final customProfiles = getCustomProfiles();
+    customProfiles[name] = settings;
+    await saveCustomProfiles(customProfiles);
+    await PlayerUiKeys.customColorProfile.set(settings);
+  }
+
+  static Future<void> deleteCustomProfile(String name) async {
+    final customProfiles = getCustomProfiles();
+    customProfiles.remove(name);
+    await saveCustomProfiles(customProfiles);
+    if (customProfiles.isNotEmpty) {
+      await PlayerUiKeys.customColorProfile.set(customProfiles.values.first);
+    }
+  }
+
+  static Future<void> renameCustomProfile(String oldName, String newName) async {
+    final customProfiles = getCustomProfiles();
+    if (customProfiles.containsKey(oldName)) {
+      final settings = customProfiles.remove(oldName)!;
+      customProfiles[newName] = settings;
+      await saveCustomProfiles(customProfiles);
+    }
+  }
+
+  Future<void> applyColorProfile(String profile, dynamic player) async {
+    final customProfiles = getCustomProfiles();
+    Map<String, int>? settings;
+
+    if (customProfiles.containsKey(profile)) {
+      settings = customProfiles[profile];
+    } else if (profile.startsWith('custom:')) {
+      final customName = profile.substring(7);
+      if (customProfiles.containsKey(customName)) {
+        settings = customProfiles[customName];
+      } else if (customProfiles.isNotEmpty) {
+        settings = customProfiles.values.first;
+      }
+    } else if (profile.toLowerCase() == 'custom') {
+      if (customProfiles.isNotEmpty) {
+        settings = customProfiles.values.first;
+      } else {
+        final savedMap = PlayerUiKeys.customColorProfile.get<Map<String, dynamic>>({});
+        if (savedMap.isNotEmpty) {
+          settings = savedMap.map((k, v) => MapEntry(k.toString(), (v as num).toInt()));
+        }
+      }
+    } else {
+      settings = profiles[profile.toLowerCase()];
+    }
+
     if (settings != null && player.platform != null) {
       try {
         for (final entry in settings.entries) {
@@ -244,11 +310,16 @@ class ColorProfileBottomSheet extends StatefulWidget {
 
   static Future<void> showColorProfileSheet(
       BuildContext context, PlayerController controller, dynamic player) {
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+    final panelWidth =
+        MediaQuery.of(context).size.width * (isLandscape ? 0.45 : 0.85);
+
     return showGeneralDialog(
       context: context,
       barrierDismissible: true,
       barrierLabel: 'Color Profile',
-      barrierColor: Colors.black54,
+      barrierColor: Colors.transparent,
       transitionDuration: const Duration(milliseconds: 300),
       transitionBuilder: (context, anim1, anim2, child) {
         return SlideTransition(
@@ -268,7 +339,7 @@ class ColorProfileBottomSheet extends StatefulWidget {
           child: Material(
             color: Colors.transparent,
             child: SizedBox(
-              width: MediaQuery.of(context).size.width * 0.85,
+              width: panelWidth,
               height: double.infinity,
               child: ColorProfileBottomSheet(
                 activeSettings: controller.customSettings.value,
@@ -467,133 +538,125 @@ class _ColorProfileBottomSheetState extends State<ColorProfileBottomSheet>
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withValues(alpha: 0.90),
+        color: theme.colorScheme.surface.withValues(alpha: 0.65),
         borderRadius: const BorderRadius.horizontal(left: Radius.circular(28)),
       ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer,
+      child: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.tune,
+                        color: theme.colorScheme.onPrimaryContainer,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Color Profiles',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close, size: 18),
+                      style: IconButton.styleFrom(
+                        backgroundColor: theme.colorScheme.surfaceVariant,
+                        minimumSize: const Size(32, 32),
+                        padding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceVariant.withValues(alpha: 0.8),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: TabBar(
+                  controller: _tabController,
+                  isScrollable: true,
+                  tabs: const [
+                    Tab(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Iconsax.eye, size: 16),
+                          SizedBox(width: 6),
+                          AnymexText.semiBold(text: 'Shaders'),
+                        ],
+                      ),
+                    ),
+                    Tab(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.movie_filter_rounded, size: 16),
+                          SizedBox(width: 6),
+                          AnymexText.semiBold(text: 'Visual'),
+                        ],
+                      ),
+                    ),
+                    Tab(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.dashboard_customize, size: 16),
+                          SizedBox(width: 6),
+                          AnymexText.semiBold(text: 'Presets'),
+                        ],
+                      ),
+                    ),
+                    Tab(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.tune, size: 16),
+                          SizedBox(width: 6),
+                          AnymexText.semiBold(text: 'Custom'),
+                        ],
+                      ),
+                    ),
+                  ],
+                  indicator: BoxDecoration(
+                    color: theme.colorScheme.primary,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    Icons.tune,
-                    color: theme.colorScheme.onPrimaryContainer,
-                    size: 24,
-                  ),
+                  labelColor: theme.colorScheme.onPrimary,
+                  unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  dividerColor: Colors.transparent,
                 ),
-                const SizedBox(width: 12),
-                Text(
-                  'Color Profiles',
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close),
-                  style: IconButton.styleFrom(
-                    backgroundColor: theme.colorScheme.surfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 24),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceVariant,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.colorScheme.shadow.opaque(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: TabBar(
-              controller: _tabController,
-              tabs: const [
-                Tab(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Iconsax.eye, size: 20),
-                      SizedBox(width: 8),
-                      AnymexText.semiBold(text: 'Shaders'),
-                    ],
-                  ),
-                ),
-                Tab(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.movie_filter_rounded, size: 20),
-                      SizedBox(width: 8),
-                      AnymexText.semiBold(text: 'Visual'),
-                    ],
-                  ),
-                ),
-                Tab(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.dashboard_customize, size: 20),
-                      SizedBox(width: 8),
-                      AnymexText.semiBold(text: 'Presets'),
-                    ],
-                  ),
-                ),
-                Tab(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.tune, size: 20),
-                      SizedBox(width: 8),
-                      AnymexText.semiBold(text: 'Custom'),
-                    ],
-                  ),
-                ),
-              ],
-              indicator: BoxDecoration(
-                color: theme.colorScheme.primary,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.colorScheme.primary.opaque(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
-              labelColor: theme.colorScheme.onPrimary,
-              unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-              indicatorSize: TabBarIndicatorSize.tab,
-              dividerColor: Colors.transparent,
-              labelStyle: const TextStyle(fontWeight: FontWeight.w600),
             ),
-          ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildShadersTab(theme),
-                _buildVisualTab(theme),
-                _buildPresetsTab(theme),
-                _buildCustomTab(theme),
-              ],
-            ),
-          ),
-        ],
+          ];
+        },
+        body: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildShadersTab(theme),
+            _buildVisualTab(theme),
+            _buildPresetsTab(theme),
+            _buildCustomTab(theme),
+          ],
+        ),
       ),
     );
   }
@@ -748,28 +811,12 @@ class _ColorProfileBottomSheetState extends State<ColorProfileBottomSheet>
             ),
           ),
         ),
-        // Reset button for Shaders tab
         Padding(
-          padding: const EdgeInsets.all(24),
-          child: SizedBox(
-            width: double.infinity,
-            child: FilledButton.tonal(
-              onPressed: enableShaders ? _resetShaderToDefault : null,
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.refresh, size: 20),
-                  SizedBox(width: 8),
-                  Text('Reset Shader to Default'),
-                ],
-              ),
-            ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: TextButton.icon(
+            onPressed: enableShaders ? _resetShaderToDefault : null,
+            icon: const Icon(Icons.refresh, size: 16),
+            label: const Text('Reset Shader to Default', style: TextStyle(fontSize: 13)),
           ),
         ),
       ],
@@ -793,9 +840,155 @@ class _ColorProfileBottomSheetState extends State<ColorProfileBottomSheet>
     }
   }
 
+  Future<void> _showSaveCustomProfileDialog({String? defaultName}) async {
+    final customProfiles = ColorProfileManager.getCustomProfiles();
+    final nameController = TextEditingController(
+        text: defaultName ?? 'Custom ${customProfiles.length + 1}');
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Save Custom Profile'),
+          content: TextField(
+            controller: nameController,
+            autofocus: true,
+            decoration: const InputDecoration(
+              labelText: 'Profile Name',
+              hintText: 'Enter profile name',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final text = nameController.text.trim();
+                if (text.isNotEmpty) {
+                  Navigator.pop(context, text);
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != null && result.isNotEmpty) {
+      await ColorProfileManager.saveCustomProfile(result, _customSettings);
+      setState(() {
+        _selectedProfile = result;
+      });
+      await ColorProfileManager().applyColorProfile(result, widget.player);
+      widget.onProfileSelected(result);
+      widget.onCustomSettingsChanged(_customSettings);
+      _showProfileAppliedFeedback(result);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Saved profile "$result"'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _showRenameCustomProfileDialog(String oldName) async {
+    final nameController = TextEditingController(text: oldName);
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Rename Profile'),
+          content: TextField(
+            controller: nameController,
+            autofocus: true,
+            decoration: const InputDecoration(
+              labelText: 'New Profile Name',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final text = nameController.text.trim();
+                if (text.isNotEmpty) {
+                  Navigator.pop(context, text);
+                }
+              },
+              child: const Text('Rename'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != null && result.isNotEmpty && result != oldName) {
+      await ColorProfileManager.renameCustomProfile(oldName, result);
+      setState(() {
+        if (_selectedProfile == oldName) {
+          _selectedProfile = result;
+        }
+      });
+      widget.onProfileSelected(_selectedProfile);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Renamed to "$result"'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteCustomProfile(String name) async {
+    await ColorProfileManager.deleteCustomProfile(name);
+    setState(() {
+      if (_selectedProfile == name) {
+        _selectedProfile = 'natural';
+      }
+    });
+    if (_selectedProfile == 'natural') {
+      await ColorProfileManager().resetToNatural(widget.player);
+      widget.onProfileSelected('natural');
+    }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Deleted profile "$name"'),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      );
+    }
+  }
+
   Widget _buildPresetsTab(ThemeData theme) {
+    final customProfiles = ColorProfileManager.getCustomProfiles();
     Map<String, List<String>> groupedProfiles = {
-      'Custom': ['custom'],
       'Anime': ['anime_4k', 'anime', 'anime_vibrant', 'anime_soft'],
       'Cinema': ['cinema', 'cinema_dark', 'cinema_hdr'],
       'Vivid': ['vivid', 'vivid_pop', 'vivid_warm'],
@@ -842,6 +1035,205 @@ class _ColorProfileBottomSheetState extends State<ColorProfileBottomSheet>
                 ),
               ),
               const SizedBox(height: 20),
+              AnymexExpansionTile(
+                title: 'Custom',
+                initialExpanded: true,
+                content: Column(
+                  children: [
+                    ...customProfiles.entries.map((entry) {
+                      final customName = entry.key;
+                      final isSelected = _selectedProfile == customName ||
+                          _selectedProfile == 'custom:$customName';
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () async {
+                              setState(() {
+                                _selectedProfile = customName;
+                                _customSettings = Map.from(entry.value);
+                              });
+                              await ColorProfileManager()
+                                  .applyColorProfile(customName, widget.player);
+                              widget.onProfileSelected(customName);
+                              widget.onCustomSettingsChanged(_customSettings);
+                              _showProfileAppliedFeedback(customName);
+                            },
+                            borderRadius: BorderRadius.circular(16),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                gradient: isSelected
+                                    ? LinearGradient(
+                                        colors: [
+                                          theme.colorScheme.primaryContainer,
+                                          theme.colorScheme.primaryContainer
+                                              .opaque(0.8),
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      )
+                                    : null,
+                                color: isSelected
+                                    ? null
+                                    : theme.colorScheme.surfaceVariant
+                                        .opaque(0.5),
+                                borderRadius: BorderRadius.circular(16),
+                                border: isSelected
+                                    ? Border.all(
+                                        color: theme.colorScheme.primary,
+                                        width: 2,
+                                      )
+                                    : Border.all(
+                                        color: theme.colorScheme.outline
+                                            .opaque(0.2),
+                                        width: 1,
+                                      ),
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color: theme.colorScheme.primary
+                                              .opaque(0.2),
+                                          blurRadius: 12,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Row(
+                                children: [
+                                  AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      gradient: isSelected
+                                          ? LinearGradient(
+                                              colors: [
+                                                theme.colorScheme.primary,
+                                                theme.colorScheme.primary
+                                                    .opaque(0.8),
+                                              ],
+                                            )
+                                          : null,
+                                      color: isSelected
+                                          ? null
+                                          : theme.colorScheme.surface,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Icon(
+                                      Icons.tune,
+                                      color: isSelected
+                                          ? theme.colorScheme.onPrimary
+                                          : theme.colorScheme.onSurface,
+                                      size: 24,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          customName.toUpperCase(),
+                                          style: theme.textTheme.titleSmall
+                                              ?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                            color: isSelected
+                                                ? theme.colorScheme
+                                                    .onPrimaryContainer
+                                                : theme.colorScheme.onSurface,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Custom user profile',
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                            color: isSelected
+                                                ? theme.colorScheme
+                                                    .onPrimaryContainer
+                                                    .opaque(0.8)
+                                                : theme.colorScheme
+                                                    .onSurfaceVariant,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  PopupMenuButton<String>(
+                                    icon: Icon(
+                                      Icons.more_vert,
+                                      color: isSelected
+                                          ? theme.colorScheme.onPrimaryContainer
+                                          : theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                    onSelected: (val) {
+                                      if (val == 'rename') {
+                                        _showRenameCustomProfileDialog(
+                                            customName);
+                                      } else if (val == 'delete') {
+                                        _deleteCustomProfile(customName);
+                                      }
+                                    },
+                                    itemBuilder: (context) => [
+                                      const PopupMenuItem(
+                                        value: 'rename',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.edit, size: 18),
+                                            SizedBox(width: 8),
+                                            Text('Rename'),
+                                          ],
+                                        ),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'delete',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.delete,
+                                                size: 18, color: Colors.red),
+                                            SizedBox(width: 8),
+                                            Text('Delete',
+                                                style: TextStyle(
+                                                    color: Colors.red)),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  if (isSelected) ...[
+                                    const SizedBox(width: 4),
+                                    Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: theme.colorScheme.primary,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.check,
+                                        color: theme.colorScheme.onPrimary,
+                                        size: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                    TextButton.icon(
+                      onPressed: () => _showSaveCustomProfileDialog(),
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('Add Custom Profile'),
+                    ),
+                  ],
+                ),
+              ),
               ...groupedProfiles.entries.map((category) {
                 return AnymexExpansionTile(
                   title: category.key,
@@ -1006,28 +1398,12 @@ class _ColorProfileBottomSheetState extends State<ColorProfileBottomSheet>
             ],
           ),
         ),
-        // Reset button for Presets tab
         Padding(
-          padding: const EdgeInsets.all(24),
-          child: SizedBox(
-            width: double.infinity,
-            child: FilledButton.tonal(
-              onPressed: _resetPresetToNatural,
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.refresh, size: 20),
-                  SizedBox(width: 8),
-                  Text('Reset to Natural Profile'),
-                ],
-              ),
-            ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: TextButton.icon(
+            onPressed: _resetPresetToNatural,
+            icon: const Icon(Icons.refresh, size: 16),
+            label: const Text('Reset to Natural Profile', style: TextStyle(fontSize: 13)),
           ),
         ),
       ],
@@ -1171,26 +1547,11 @@ class _ColorProfileBottomSheetState extends State<ColorProfileBottomSheet>
           ),
         ),
         Padding(
-          padding: const EdgeInsets.all(24),
-          child: SizedBox(
-            width: double.infinity,
-            child: FilledButton.tonal(
-              onPressed: _resetVisualToDefault,
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.refresh, size: 20),
-                  SizedBox(width: 8),
-                  Text('Reset Visual Settings'),
-                ],
-              ),
-            ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: TextButton.icon(
+            onPressed: _resetVisualToDefault,
+            icon: const Icon(Icons.refresh, size: 16),
+            label: const Text('Reset Visual Settings', style: TextStyle(fontSize: 13)),
           ),
         ),
       ],
@@ -1317,6 +1678,7 @@ class _ColorProfileBottomSheetState extends State<ColorProfileBottomSheet>
   }
 
   Widget _buildCustomTab(ThemeData theme) {
+    final customProfiles = ColorProfileManager.getCustomProfiles();
     return Column(
       children: [
         Expanded(
@@ -1356,6 +1718,38 @@ class _ColorProfileBottomSheetState extends State<ColorProfileBottomSheet>
                   ],
                 ),
               ),
+              if (customProfiles.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: customProfiles.entries.map((entry) {
+                      final name = entry.key;
+                      final isSelected = _selectedProfile == name;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: FilterChip(
+                          selected: isSelected,
+                          label: Text(name),
+                          onSelected: (selected) async {
+                            if (selected) {
+                              setState(() {
+                                _selectedProfile = name;
+                                _customSettings = Map.from(entry.value);
+                              });
+                              await ColorProfileManager()
+                                  .applyColorProfile(name, widget.player);
+                              widget.onProfileSelected(name);
+                              widget.onCustomSettingsChanged(_customSettings);
+                              _showProfileAppliedFeedback(name);
+                            }
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
               ..._customSettings.keys.map((setting) {
                 return _buildSliderTile(setting, theme);
@@ -1363,65 +1757,37 @@ class _ColorProfileBottomSheetState extends State<ColorProfileBottomSheet>
             ],
           ),
         ),
-        // Reset button for Custom tab
         Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () async {
-                    await _applyCustomSettings();
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('Saved to Custom Preset!'),
-                          backgroundColor: Theme.of(context).colorScheme.primary,
-                          behavior: SnackBarBehavior.floating,
-                          margin: const EdgeInsets.all(16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.save_rounded, size: 20),
-                      SizedBox(width: 8),
-                      Text('Save as Custom Preset'),
-                    ],
-                  ),
+              FilledButton.icon(
+                onPressed: () => _showSaveCustomProfileDialog(
+                    defaultName: _selectedProfile.isNotEmpty &&
+                            !ColorProfileManager.profiles
+                                .containsKey(_selectedProfile)
+                        ? _selectedProfile
+                        : null),
+                icon: const Icon(Icons.save_rounded, size: 16),
+                label: const Text('Save as Custom Preset',
+                    style: TextStyle(fontSize: 13)),
+                style: FilledButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 ),
               ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.tonal(
-                  onPressed: _resetCustomToDefault,
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.refresh, size: 20),
-                      SizedBox(width: 8),
-                      Text('Reset to Default Settings'),
-                    ],
-                  ),
+              const SizedBox(height: 4),
+              TextButton.icon(
+                onPressed: _resetCustomToDefault,
+                icon: const Icon(Icons.refresh, size: 16),
+                label: const Text('Reset to Default Settings',
+                    style: TextStyle(fontSize: 13)),
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 ),
               ),
             ],

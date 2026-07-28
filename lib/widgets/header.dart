@@ -9,6 +9,7 @@ import 'package:anymex/screens/manga/widgets/search_selector.dart';
 import 'package:anymex/screens/search/search_view.dart';
 import 'package:anymex/screens/search/source_search_page.dart';
 import 'package:anymex_extension_runtime_bridge/anymex_extension_runtime_bridge.dart';
+import 'package:anymex/widgets/common/extension_feed_sheet.dart';
 import 'package:anymex/utils/function.dart';
 import 'package:anymex/widgets/custom_widgets/anymex_animated_logo.dart';
 import 'package:anymex/utils/theme_extensions.dart';
@@ -417,6 +418,32 @@ class Header extends StatelessWidget {
         final itemType = type == PageType.manga
             ? ItemType.manga
             : (type == PageType.novel ? ItemType.novel : ItemType.anime);
+        final installedSources = itemType == ItemType.manga
+            ? sourceController.installedMangaExtensions
+            : (itemType == ItemType.novel
+                ? sourceController.installedNovelExtensions
+                : sourceController.installedExtensions);
+        list.add(
+          _PillIconButton(
+            onPressed: () {
+              ExtensionFeedSheet.show(
+                context,
+                itemType: itemType,
+                installedSources: installedSources,
+                onConfigSaved: () {
+                  profileData.refresh();
+                },
+              );
+            },
+            icon: Icon(
+              Icons.tune_rounded,
+              color: context.colors.primary,
+              size: 18,
+            ),
+            context: context,
+          ),
+        );
+        list.add(const SizedBox(width: 8));
         list.add(
           _PillIconButton(
             onPressed: () {

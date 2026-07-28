@@ -46,6 +46,7 @@ class _DoubleTapSeekWidgetState extends State<DoubleTapSeekWidget>
   Timer? _holdStartTimer;
 
   double _initialSwipeY = 0.0;
+  double _initialSwipeX = 0.0;
   bool _isDragging = false;
   bool _longPressStarted = false;
 
@@ -220,6 +221,15 @@ class _DoubleTapSeekWidgetState extends State<DoubleTapSeekWidget>
     _longPressStarted = false;
     _holdStartTimer?.cancel();
 
+    if (_isHorizontalDragging) {
+      _isHorizontalDragging = false;
+      if (mounted) {
+        setState(() {
+          _showSeekTime = false;
+        });
+      }
+    }
+
     if (_isHolding) {
       setState(() {
         _isHolding = false;
@@ -369,6 +379,34 @@ class _DoubleTapSeekWidgetState extends State<DoubleTapSeekWidget>
       _setPlaybackRate(_currentSpeed);
       HapticFeedback.selectionClick();
     }
+  }
+
+  void _updateSeekFromHorizontalSwipe(double deltaX) {
+    if (widget.controller.isLocked.value) return;
+    if (!_isHolding) return;
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth <= 0) return;
+    final sensitivity = widget.controller.playerSettings.swipeSeekSensitivity;
+    final totalMs = widget.controller.episodeDuration.value.inMilliseconds;
+    if (totalMs <= 0) return;
+
+    final msPerPixel = (totalMs * sensitivity) / screenWidth;
+    final deltaMs = (deltaX * msPerPixel).round();
+
+    final newMs =
+        (_dragStartPlayerPosition.inMilliseconds + deltaMs).clamp(0, totalMs);
+    final newPosition = Duration(milliseconds: newMs);
+    final direction = deltaMs > 0 ? 1 : (deltaMs < 0 ? -1 : 0);
+
+    setState(() {
+      _showSeekTime = true;
+      _isHorizontalDragging = true;
+      _dragSeekDirection = direction;
+      _dragCurrentPosition = newPosition;
+    });
+
+    widget.controller.seekToInstant(newPosition);
   }
 
   Widget _buildSpeedIndicator() {
@@ -819,6 +857,9 @@ class _DoubleTapSeekWidgetState extends State<DoubleTapSeekWidget>
               onLongPressStart: (details) {
                 if (!Get.find<Settings>().enableHoldToSeek) return;
                 _initialSwipeY = details.globalPosition.dy;
+                _initialSwipeX = details.globalPosition.dx;
+                _dragStartPlayerPosition =
+                    widget.controller.currentPosition.value;
                 _startHold();
               },
               onLongPressEnd: (details) {
@@ -834,6 +875,10 @@ class _DoubleTapSeekWidgetState extends State<DoubleTapSeekWidget>
                 if (_isHolding) {
                   double deltaY = details.globalPosition.dy - _initialSwipeY;
                   _updateSpeedFromSwipe(deltaY);
+                  double deltaX = details.globalPosition.dx - _initialSwipeX;
+                  if (deltaX.abs() > 10) {
+                    _updateSeekFromHorizontalSwipe(deltaX);
+                  }
                 }
               },
               child: Container(

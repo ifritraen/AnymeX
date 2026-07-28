@@ -42,7 +42,7 @@ class _ExtensionTestPageState extends State<ExtensionTestPage> {
 
     return Glow(
       child: Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         body: Column(
           children: [
             const NestedHeader(title: 'Extension Testing'),

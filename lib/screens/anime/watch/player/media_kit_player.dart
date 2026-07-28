@@ -117,6 +117,8 @@ class MediaKitPlayer extends base.BasePlayer {
         }
       }
       await mpv.setProperty("hwdec", config.hwdec);
+      await mpv.setProperty("hr-seek", "always");
+      await mpv.setProperty("hr-seek-framedrop", "no");
       await mpv.setProperty("vd-lavc-fast", "yes");
       await mpv.setProperty("vd-lavc-skiploopfilter", "nonkey");
       await mpv.setProperty("vd-lavc-threads", "4");
