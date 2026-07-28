@@ -871,7 +871,7 @@ averageScore
     }
 
     # Top Rated Novels (Page 1)
-    topRatedNovels: Page(page: 1, perPage: $perPage) {
+    topRatedNovels: Page(page: 1, perPage: \$perPage) {
       media(sort: SCORE_DESC, type: MANGA, format: NOVEL) {
         id
         title {
