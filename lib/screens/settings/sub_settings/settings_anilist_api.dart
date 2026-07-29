@@ -1,5 +1,6 @@
 import 'package:anymex/controllers/services/anilist/anilist_auth.dart';
 import 'package:anymex/controllers/services/anilist/anilist_data.dart';
+import 'package:anymex/controllers/settings/settings.dart';
 import 'package:anymex/models/Anilist/anilist_user_settings.dart';
 import 'package:anymex/screens/other_features.dart';
 import 'package:anymex/utils/al_about_me.dart';
