@@ -1974,8 +1974,8 @@ averageScore
     try {
       final offlineCtrl = Get.find<OfflineStorageController>();
       final itemType = params.isAnime ? ItemType.anime : ItemType.manga;
-      final media = (currentMedia.value?.id?.isNotEmpty ?? false)
-          ? currentMedia.value!
+      final media = (currentMedia.value.id != null && currentMedia.value.id!.isNotEmpty)
+          ? Media.fromTrackedMedia(currentMedia.value)
           : Media(id: params.listId, title: 'Media', mediaType: itemType, serviceType: ServicesType.anilist);
       await offlineCtrl.syncMediaToLocalCategory(
         media,

@@ -1497,6 +1497,7 @@ class _SearchPageState extends State<SearchPage>
                             fontWeight: FontWeight.bold,
                             height: 1.0,
                           ),
+                        ),
                       ),
                     ),
                   Positioned(
