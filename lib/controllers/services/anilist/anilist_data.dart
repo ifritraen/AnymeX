@@ -958,7 +958,7 @@ averageScore
     }
     ${prevQueries.toString()}
   }
-'';
+''';
 
     final token = AuthKeys.authToken.get<String?>();
     final headers = {
