@@ -519,6 +519,7 @@ class _GistSyncCard extends StatelessWidget {
                                 isLogged: isLogged,
                                 isAuthenticating: ctrl.isAuthenticating.value,
                                 isSyncing: isSyncing,
+                                syncEnabled: ctrl.syncEnabled.value,
                                 hasCloudGist: hasCloudGist,
                                 lastSyncSuccessful: lastSyncSuccessful,
                               ),
