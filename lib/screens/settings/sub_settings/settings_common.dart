@@ -387,6 +387,8 @@ class _SettingsCommonState extends State<SettingsCommon> {
           ),
         );
       },
+    );
+  }
   void _showSeasonsCountDialog() {
     final settingsCtrl = Get.find<Settings>();
     final currentCount = settingsCtrl.prevSeasonsCount;
