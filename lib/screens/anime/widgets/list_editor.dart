@@ -9,6 +9,7 @@ import 'package:anymex/models/Media/media.dart';
 import 'package:anymex/widgets/custom_widgets/anymex_button.dart';
 import 'package:flutter/material.dart';
 import 'package:anymex/utils/theme_extensions.dart';
+import 'package:anymex_extension_runtime_bridge/anymex_extension_runtime_bridge.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
@@ -122,8 +123,8 @@ class _ListEditorModalState extends State<ListEditorModal> {
       final anilistData = Get.find<AnilistData>();
       final alProfile = anilistData.profileData.value;
       List<String> customAlLists = [];
-      if (alProfile.userMediaLists != null) {
-        customAlLists = alProfile.userMediaLists!
+      if (alProfile != null) {
+        customAlLists = alProfile.customLists
             .where((l) => l.isCustomList == true && l.name != null)
             .map((l) => l.name!)
             .toList();
@@ -1268,7 +1269,7 @@ class _ListEditorModalState extends State<ListEditorModal> {
 
                         try {
                           final serviceHandler = Get.find<ServiceHandler>();
-                          if (serviceHandler.serviceType.isAL) {
+                          if (serviceHandler.serviceType.value.isAL) {
                             await serviceHandler.onlineService.updateListEntry(
                               UpdateListEntryParams(
                                 listId: widget.media.id,
