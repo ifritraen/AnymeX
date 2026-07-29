@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math' show min;
 
 import 'package:anymex/controllers/cacher/cache_controller.dart';
+import 'package:anymex/controllers/offline/offline_storage_controller.dart';
 import 'package:anymex/controllers/service_handler/params.dart';
 import 'package:anymex/controllers/service_handler/service_handler.dart';
 import 'package:anymex/controllers/services/anilist/anilist_auth.dart';
@@ -1973,9 +1974,9 @@ averageScore
     try {
       final offlineCtrl = Get.find<OfflineStorageController>();
       final itemType = params.isAnime ? ItemType.anime : ItemType.manga;
-      final media = currentMedia.value.id.isNotEmpty
-          ? currentMedia.value
-          : Media(id: params.listId, title: 'Media', mediaType: itemType);
+      final media = (currentMedia.value?.id?.isNotEmpty ?? false)
+          ? currentMedia.value!
+          : Media(id: params.listId, title: 'Media', mediaType: itemType, serviceType: ServicesType.anilist);
       await offlineCtrl.syncMediaToLocalCategory(
         media,
         params.status,

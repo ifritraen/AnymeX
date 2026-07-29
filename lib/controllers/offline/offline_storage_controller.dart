@@ -487,8 +487,8 @@ class OfflineStorageController extends GetxController {
       final offline = OfflineMedia(
         mediaId: media.id,
         name: media.title,
-        english: media.englishTitle,
-        japanese: media.japaneseTitle,
+        english: media.title,
+        japanese: media.title,
         poster: media.poster,
         cover: media.cover,
         rating: media.rating,
