@@ -660,7 +660,6 @@ class AnilistData extends GetxController implements BaseService, OnlineService {
       }
       topRatedPrev3SeasonsAnimes.value = _sortMediaByRating(combinedTopRated);
       popularPrev3SeasonsAnimes.value = _sortMediaByPopularity(combinedPopular);
-    }
     } else {
       throw Exception('Failed to load AniList data: ${response.statusCode}');
     }
