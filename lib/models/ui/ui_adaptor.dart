@@ -31,6 +31,7 @@ class UISettings {
   bool useLegacyHeader;
   bool useGrainTexture;
   double grainIntensity;
+  bool enableImmersiveMode;
   int prevSeasonsCount;
 
   UISettings({
