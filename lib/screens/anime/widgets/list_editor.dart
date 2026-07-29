@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:anymex/controllers/offline/offline_storage_controller.dart';
 import 'package:anymex/controllers/service_handler/params.dart';
 import 'package:anymex/controllers/service_handler/service_handler.dart';
+import 'package:anymex/controllers/services/anilist/anilist_auth.dart';
 import 'package:anymex/controllers/services/anilist/anilist_data.dart';
 import 'package:anymex/database/isar_models/custom_list.dart';
 import 'package:anymex/models/Media/media.dart';
@@ -120,14 +121,13 @@ class _ListEditorModalState extends State<ListEditorModal> {
       final storageCtrl = Get.find<OfflineStorageController>();
       final localLists = await storageCtrl.getCustomListsByType(itemType);
 
-      final anilistData = Get.find<AnilistData>();
-      final alProfile = anilistData.profileData.value;
       List<String> customAlLists = [];
-      if (alProfile != null) {
-        customAlLists = alProfile.customLists
-            .where((l) => l.isCustomList == true && l.name != null)
-            .map((l) => l.name!)
-            .toList();
+      final auth = Get.find<AnilistAuth>();
+      final settings = auth.cachedSettings;
+      if (settings != null) {
+        customAlLists = widget.isManga
+            ? settings.mangaCustomLists
+            : settings.animeCustomLists;
       }
 
       if (mounted) {
