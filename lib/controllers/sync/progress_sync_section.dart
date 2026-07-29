@@ -53,6 +53,7 @@ class _GistSyncCard extends StatelessWidget {
         colors,
         isLogged: isLogged,
         isSyncing: isSyncing,
+        syncEnabled: syncEnabled,
         hasCloudGist: hasCloudGist,
         lastSyncSuccessful: lastSyncSuccessful,
       );
@@ -109,6 +110,7 @@ class _GistSyncCard extends StatelessWidget {
                           isLogged: isLogged,
                           isAuthenticating: isAuthenticating,
                           isSyncing: isSyncing,
+                          syncEnabled: syncEnabled,
                           hasCloudGist: hasCloudGist,
                           lastSyncSuccessful: lastSyncSuccessful,
                         ),
@@ -201,7 +203,9 @@ class _GistSyncCard extends StatelessWidget {
                           subtitle:
                               'While watching episodes or reading chapters',
                           value: syncEnabled,
-                          onChanged: (v) => ctrl.syncEnabled.value = v,
+                          onChanged: (v) {
+                            unawaited(ctrl.setSyncEnabled(v));
+                          },
                         ),
                         const SizedBox(height: 8),
                         _SyncPreferenceTile(
@@ -276,10 +280,12 @@ class _GistSyncCard extends StatelessWidget {
     required bool isLogged,
     required bool isAuthenticating,
     required bool isSyncing,
+    required bool syncEnabled,
     required bool? hasCloudGist,
     required bool? lastSyncSuccessful,
   }) {
     if (!isLogged) return isAuthenticating ? 'Connecting' : 'Disconnected';
+    if (!syncEnabled) return 'Disabled';
     if (isAuthenticating) return 'Connecting';
     if (isSyncing) return 'Syncing';
     if (hasCloudGist == false) return 'Needs Setup';
@@ -307,10 +313,11 @@ class _GistSyncCard extends StatelessWidget {
     ColorScheme colors, {
     required bool isLogged,
     required bool isSyncing,
+    required bool syncEnabled,
     required bool? hasCloudGist,
     required bool? lastSyncSuccessful,
   }) {
-    if (!isLogged) return colors.outline;
+    if (!isLogged || !syncEnabled) return colors.outline;
     if (isSyncing) return colors.primary;
     if (hasCloudGist == false) return const Color(0xFFF59E0B);
     if (lastSyncSuccessful == false) return const Color(0xFFEF5350);
@@ -463,6 +470,7 @@ class _GistSyncCard extends StatelessWidget {
                     ctx.colors,
                     isLogged: isLogged,
                     isSyncing: isSyncing,
+                    syncEnabled: ctrl.syncEnabled.value,
                     hasCloudGist: hasCloudGist,
                     lastSyncSuccessful: lastSyncSuccessful,
                   );
@@ -630,6 +638,24 @@ class _GistSyncCard extends StatelessWidget {
                   onTap: () {
                     ctrl.logout();
                     Navigator.pop(ctx);
+                  },
+                ),
+                const SizedBox(height: 8),
+                _SheetActionTile(
+                  icon: ctrl.syncEnabled.value
+                      ? Icons.pause_circle_outline_rounded
+                      : Icons.play_circle_outline_rounded,
+                  title: ctrl.syncEnabled.value
+                      ? 'Disable Gist Sync'
+                      : 'Enable Gist Sync',
+                  subtitle: ctrl.syncEnabled.value
+                      ? 'Pause all Gist sync activity while keeping account connected'
+                      : 'Resume cloud progress syncing via GitHub Gist',
+                  color: ctrl.syncEnabled.value
+                      ? ctx.colors.error
+                      : ctx.colors.primary,
+                  onTap: () {
+                    unawaited(ctrl.setSyncEnabled(!ctrl.syncEnabled.value));
                   },
                 ),
               ],

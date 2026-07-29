@@ -574,14 +574,14 @@ class _SettingsAnilistApiState extends State<SettingsAnilistApi> {
           final currentCount = Get.find<Settings>().prevSeasonsCount;
           return CustomTile(
             icon: Icons.history_rounded,
-            title: 'Previous Seasons Count',
-            description: '$currentCount previous ${currentCount == 1 ? "season" : "seasons"}',
+            title: 'Previous Seasons / Years Count',
+            description: '$currentCount previous ${currentCount == 1 ? "season/year" : "seasons/years"}',
             isDescBold: true,
             onTap: () => _showOptionPicker<int>(
-              title: 'Previous Seasons Count',
+              title: 'Previous Seasons / Years Count',
               items: List.generate(10, (i) => i + 1),
               value: currentCount,
-              itemLabel: (val) => '$val ${val == 1 ? "season" : "seasons"}',
+              itemLabel: (val) => '$val ${val == 1 ? "season/year" : "seasons/years"}',
               onChanged: (v) {
                 Get.find<Settings>().prevSeasonsCount = v;
                 final anilistData = Get.find<AnilistData>();

@@ -57,11 +57,18 @@ jobs:
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "$KEYSTORE_BASE64" | base64 -d > android/app/anymex.jks
-            printf "storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=anymex.jks\n" "$KEYSTORE_PASSWORD" "$KEYSTORE_PASSWORD" "$KEY_ALIAS" > android/key.properties
+            # Write JKS to android/ so rootProject.file('anymex.jks') resolves correctly
+            echo "$KEYSTORE_BASE64" | base64 -d > android/anymex.jks
+            # KEY_PASSWORD falls back to KEYSTORE_PASSWORD if not set separately
+            _KEY_PASS="${KEY_PASSWORD:-$KEYSTORE_PASSWORD}"
+            printf "storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=anymex.jks\n" "$KEYSTORE_PASSWORD" "$_KEY_PASS" "$KEY_ALIAS" > android/key.properties
+            echo "Keystore configured successfully"
+          else
+            echo "WARNING: KEYSTORE_BASE64 not set — APK will be signed with debug key"
           fi
 
       - name: Setup Environment File (.env)

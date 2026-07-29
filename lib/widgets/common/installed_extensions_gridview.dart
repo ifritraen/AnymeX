@@ -33,10 +33,24 @@ class _InstalledExtensionsGridViewState
   late final TextEditingController _searchController;
   String _searchQuery = '';
 
+  // Cached futures — rebuilt only when sources/config change to avoid FutureBuilder resets
+  Map<String, Future<List<dynamic>>> _futuresMap = {};
+  List<Source> _lastOrderedSources = [];
+
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+  }
+
+  @override
+  void didUpdateWidget(InstalledExtensionsGridView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Invalidate cache when source list changes
+    if (oldWidget.sources != widget.sources) {
+      _futuresMap = {};
+      _lastOrderedSources = [];
+    }
   }
 
   @override
@@ -61,37 +75,53 @@ class _InstalledExtensionsGridViewState
     final orderedSources = <Source>[];
     for (final cfg in configs) {
       if (!cfg.enabled) continue;
-      final src = filteredSources.firstWhereOrNull((s) => (s.id ?? s.name ?? '') == cfg.sourceId);
+      final src = filteredSources.firstWhereOrNull(
+        (s) => (s.id?.isNotEmpty == true ? s.id : s.name ?? '') == cfg.sourceId,
+      );
       if (src != null) {
         orderedSources.add(src);
       }
     }
 
-    final Map<String, Future<List<dynamic>>> futuresMap = {};
-    Future<List<dynamic>> previousFuture = Future.value(<dynamic>[]);
-    for (final s in orderedSources) {
-      final cfg = configs.firstWhere(
-        (c) => c.sourceId == (s.id ?? s.name ?? ''),
-        orElse: () => ExtensionFeedItemConfig(sourceId: s.id ?? s.name ?? ''),
-      );
-      final currentPrevious = previousFuture;
-      final future = currentPrevious.then((_) async {
-        try {
-          if (cfg.feedType == 'search' && cfg.searchQuery.isNotEmpty) {
-            final res = await s.methods.search(cfg.searchQuery, 1, []);
-            return res.list;
-          } else {
-            final res = await s.methods.getPopular(1);
-            return res.list;
+    // Rebuild futures only when the ordered source set changes
+    final orderedIds = orderedSources.map((s) => s.id ?? s.name ?? '').toList();
+    final lastIds = _lastOrderedSources.map((s) => s.id ?? s.name ?? '').toList();
+    if (orderedIds.join(',') != lastIds.join(',')) {
+      _lastOrderedSources = List.unmodifiable(orderedSources);
+      _futuresMap = {};
+      Future<List<dynamic>> previousFuture = Future.value(<dynamic>[]);
+      for (final s in orderedSources) {
+        final cfg = configs.firstWhere(
+          (c) => c.sourceId == (s.id?.isNotEmpty == true ? s.id : s.name ?? ''),
+          orElse: () => ExtensionFeedItemConfig(sourceId: s.id ?? s.name ?? ''),
+        );
+        final currentPrevious = previousFuture;
+        final future = currentPrevious.then((_) async {
+          try {
+            if (cfg.feedType == 'search' && cfg.searchQuery.isNotEmpty) {
+              final res = await s.methods.search(cfg.searchQuery, 1, []);
+              return res.list;
+            } else if (cfg.feedType == 'latest') {
+              try {
+                final res = await s.methods.getLatestUpdates(1);
+                return res.list;
+              } catch (_) {
+                final res = await s.methods.getPopular(1);
+                return res.list;
+              }
+            } else {
+              final res = await s.methods.getPopular(1);
+              return res.list;
+            }
+          } catch (_) {
+            return <dynamic>[];
           }
-        } catch (_) {
-          return <dynamic>[];
+        });
+        previousFuture = future;
+        final key = s.id ?? s.name ?? '';
+        if (key.isNotEmpty) {
+          _futuresMap[key] = future;
         }
-      });
-      previousFuture = future;
-      final key = s.id ?? s.name ?? '';
-      if (key.isNotEmpty) {
-        futuresMap[key] = future;
       }
     }
 
@@ -196,7 +226,7 @@ class _InstalledExtensionsGridViewState
                 return _ExtensionSection(
                   source: source,
                   itemType: widget.itemType,
-                  future: futuresMap[source.id ?? source.name ?? ''],
+                  future: _futuresMap[source.id ?? source.name ?? ''],
                 );
               },
             ),

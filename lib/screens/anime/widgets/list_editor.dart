@@ -1,6 +1,10 @@
 import 'dart:async';
 
+import 'package:anymex/controllers/offline/offline_storage_controller.dart';
+import 'package:anymex/controllers/service_handler/params.dart';
 import 'package:anymex/controllers/service_handler/service_handler.dart';
+import 'package:anymex/controllers/services/anilist/anilist_data.dart';
+import 'package:anymex/database/isar_models/custom_list.dart';
 import 'package:anymex/models/Media/media.dart';
 import 'package:anymex/widgets/custom_widgets/anymex_button.dart';
 import 'package:flutter/material.dart';
@@ -51,6 +55,20 @@ class _ListEditorModalState extends State<ListEditorModal> {
 
   late final TextEditingController _progressController;
   late final TextEditingController _seasonController;
+  late final TextEditingController _notesController;
+  late String _localNotes;
+
+  List<String> _userCustomAniListLists = [];
+  final Set<String> _selectedCustomAniListLists = {};
+  List<CustomList> _localCategories = [];
+  final Set<String> _selectedLocalCategories = {};
+  final Map<String, double> _advancedScores = {
+    'Visuals': 8.0,
+    'Story': 8.0,
+    'Characters': 8.0,
+    'Soundtrack': 8.0,
+    'Creativity': 8.0,
+  };
 
   static const _statuses = [
     ('PLANNING', 'Planning'),
@@ -65,15 +83,18 @@ class _ListEditorModalState extends State<ListEditorModal> {
   void initState() {
     super.initState();
     _localStatus =
-        widget.animeStatus.value.isEmpty ? 'CURRENT' : widget.animeStatus.value;
+        widget.animeStatus.value.isEmpty ? 'PLANNING' : widget.animeStatus.value;
     _localScore = widget.animeScore.value;
     _localProgress = widget.animeProgress.value;
     _localSeason = 1;
 
+    final tracked = widget.currentAnime.value;
+    _localNotes = tracked?.notes ?? '';
+    _notesController = TextEditingController(text: _localNotes);
+
     _progressController = TextEditingController(text: _localProgress.toString());
     _seasonController = TextEditingController(text: _localSeason.toString());
 
-    final tracked = widget.currentAnime.value;
     if (tracked != null) {
       _startedAt = tracked.startedAt;
       _completedAt = tracked.completedAt;
@@ -88,12 +109,40 @@ class _ListEditorModalState extends State<ListEditorModal> {
     if (isSimklMedia && !widget.isManga) {
       _fetchSimklSeasons();
     }
+
+    _loadCustomListsAndLocalCategories();
+  }
+
+  Future<void> _loadCustomListsAndLocalCategories() async {
+    try {
+      final itemType = widget.isManga ? ItemType.manga : ItemType.anime;
+      final storageCtrl = Get.find<OfflineStorageController>();
+      final localLists = await storageCtrl.getCustomListsByType(itemType);
+
+      final anilistData = Get.find<AnilistData>();
+      final alProfile = anilistData.profileData.value;
+      List<String> customAlLists = [];
+      if (alProfile.userMediaLists != null) {
+        customAlLists = alProfile.userMediaLists!
+            .where((l) => l.isCustomList == true && l.name != null)
+            .map((l) => l.name!)
+            .toList();
+      }
+
+      if (mounted) {
+        setState(() {
+          _localCategories = localLists;
+          _userCustomAniListLists = customAlLists;
+        });
+      }
+    } catch (_) {}
   }
 
   @override
   void dispose() {
     _progressController.dispose();
     _seasonController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
@@ -273,7 +322,7 @@ class _ListEditorModalState extends State<ListEditorModal> {
         children: [
           _buildHeader(context),
           const SizedBox(height: 20),
-          _buildStatusChips(context),
+          _buildProgressRow(context),
           const SizedBox(height: 20),
           if (widget.media.serviceType == ServicesType.simkl &&
               !widget.isManga) ...[
@@ -285,15 +334,17 @@ class _ListEditorModalState extends State<ListEditorModal> {
               const SizedBox(height: 20),
             ]
           ],
-          _buildProgressRow(context),
-          const SizedBox(height: 20),
           _buildScoreRow(context),
+          const SizedBox(height: 20),
+          _buildNotesRow(context),
           const SizedBox(height: 20),
           _buildDateRow(context),
           if (widget.media.serviceType.isAL) ...[
             const SizedBox(height: 16),
             _buildPrivateRow(context),
           ],
+          const SizedBox(height: 24),
+          _buildBottomSelectionRows(context),
           const SizedBox(height: 24),
           _buildActionButtons(context),
         ],
@@ -666,11 +717,47 @@ class _ListEditorModalState extends State<ListEditorModal> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Score',
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: colors.onSurfaceVariant,
+            Row(
+              children: [
+                Text(
+                  'Score',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                ),
+                const SizedBox(width: 8),
+                InkWell(
+                  onTap: () => _showAdvancedScoringDialog(context),
+                  borderRadius: BorderRadius.circular(6),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: colors.primary.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: colors.primary.withOpacity(0.4),
+                        width: 0.5,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.tune_rounded, size: 12, color: colors.primary),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Custom Score',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: colors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                ),
+              ],
             ),
             Text(
               '${_localScore.toStringAsFixed(1)} / 10',
@@ -693,6 +780,327 @@ class _ListEditorModalState extends State<ListEditorModal> {
           onChanged: (v) => setState(() => _localScore = v),
         ),
       ],
+    );
+  }
+
+  Widget _buildNotesRow(BuildContext context) {
+    final colors = context.colors;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Personal Notes',
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _notesController,
+          maxLines: 3,
+          minLines: 1,
+          style: Theme.of(context).textTheme.bodySmall,
+          decoration: InputDecoration(
+            isDense: true,
+            filled: true,
+            fillColor: colors.surfaceContainerHighest,
+            hintText: 'Add private thoughts, tags, or notes...',
+            hintStyle: TextStyle(color: colors.onSurfaceVariant),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide.none,
+            ),
+          ),
+          onChanged: (val) {
+            _localNotes = val;
+          },
+        ),
+      ],
+    );
+  }
+
+  void _showAdvancedScoringDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.colors.surface,
+      useSafeArea: true,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final colors = context.colors;
+            final criteria = _advancedScores.keys.toList();
+
+            double calculateAverage() {
+              if (_advancedScores.isEmpty) return _localScore;
+              final sum =
+                  _advancedScores.values.fold<double>(0, (a, b) => a + b);
+              return sum / _advancedScores.length;
+            }
+
+            return Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Custom Criteria Scoring',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 18),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Rate individual aspects (fetched from AniList profile)',
+                    style: TextStyle(
+                        color: colors.onSurfaceVariant, fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: criteria.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final key = criteria[index];
+                        final val = _advancedScores[key] ?? 8.0;
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  key,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14),
+                                ),
+                                Text(
+                                  '${val.toStringAsFixed(1)} / 10',
+                                  style: TextStyle(
+                                      color: colors.primary,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                            Slider(
+                              year2023: false,
+                              value: val,
+                              min: 1.0,
+                              max: 10.0,
+                              divisions: 90,
+                              activeColor: colors.primary,
+                              onChanged: (v) {
+                                setModalState(() {
+                                  _advancedScores[key] = v;
+                                });
+                                setState(() {
+                                  _localScore = calculateAverage();
+                                });
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colors.primary,
+                      minimumSize: const Size(double.infinity, 44),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () => Navigator.pop(ctx),
+                    child: Text(
+                      'Apply Average (${calculateAverage().toStringAsFixed(1)})',
+                      style: TextStyle(
+                          color: colors.onPrimary,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildBottomSelectionRows(BuildContext context) {
+    final colors = context.colors;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'AniList Status',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: colors.onSurfaceVariant,
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        const SizedBox(height: 8),
+        _buildStatusChips(context),
+        const SizedBox(height: 16),
+        if (_userCustomAniListLists.isNotEmpty) ...[
+          Text(
+            'AniList Custom Lists',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: colors.onSurfaceVariant,
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 8),
+          _buildCustomAniListChips(context),
+          const SizedBox(height: 16),
+        ],
+        Text(
+          'Local Library Category',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: colors.onSurfaceVariant,
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        const SizedBox(height: 8),
+        _buildLocalCategoryChips(context),
+      ],
+    );
+  }
+
+  Widget _buildCustomAniListChips(BuildContext context) {
+    final colors = context.colors;
+    return SizedBox(
+      height: 34,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: _userCustomAniListLists.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 6),
+        itemBuilder: (context, i) {
+          final listName = _userCustomAniListLists[i];
+          final isSelected = _selectedCustomAniListLists.contains(listName);
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                if (isSelected) {
+                  _selectedCustomAniListLists.remove(listName);
+                } else {
+                  _selectedCustomAniListLists.add(listName);
+                }
+              });
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? colors.primary
+                    : colors.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                listName,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: isSelected
+                          ? colors.onPrimary
+                          : colors.onSurfaceVariant,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildLocalCategoryChips(BuildContext context) {
+    final colors = context.colors;
+    final defaultLocalName = _localStatus == 'PLANNING'
+        ? 'Planning'
+        : _localStatus == 'CURRENT'
+            ? (widget.isManga ? 'Reading' : 'Watching')
+            : _localStatus == 'COMPLETED'
+                ? 'Completed'
+                : 'Default';
+
+    final categories = <String>{
+      defaultLocalName,
+      'Favorites',
+      ..._localCategories
+          .map((c) => c.listName ?? 'Default')
+          .where((n) => n.isNotEmpty),
+    }.toList();
+
+    return SizedBox(
+      height: 34,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: categories.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 6),
+        itemBuilder: (context, i) {
+          final catName = categories[i];
+          final isSelected = _selectedLocalCategories.contains(catName) ||
+              (_selectedLocalCategories.isEmpty && catName == defaultLocalName);
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                if (_selectedLocalCategories.contains(catName)) {
+                  _selectedLocalCategories.remove(catName);
+                } else {
+                  _selectedLocalCategories.add(catName);
+                }
+              });
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? colors.primaryContainer
+                    : colors.surfaceContainerHighest,
+                border: isSelected
+                    ? Border.all(color: colors.primary, width: 1.5)
+                    : null,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              alignment: Alignment.center,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isSelected) ...[
+                    Icon(Icons.check_rounded, size: 14, color: colors.primary),
+                    const SizedBox(width: 4),
+                  ],
+                  Text(
+                    catName,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: isSelected
+                              ? colors.primary
+                              : colors.onSurfaceVariant,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -857,6 +1265,39 @@ class _ListEditorModalState extends State<ListEditorModal> {
                           _completedAt,
                           widget.media.serviceType.isAL ? _isPrivate : null,
                         );
+
+                        try {
+                          final serviceHandler = Get.find<ServiceHandler>();
+                          if (serviceHandler.serviceType.isAL) {
+                            await serviceHandler.onlineService.updateListEntry(
+                              UpdateListEntryParams(
+                                listId: widget.media.id,
+                                score: _localScore,
+                                status: _localStatus,
+                                progress: _localProgress,
+                                notes: _notesController.text,
+                                customLists: _selectedCustomAniListLists.isNotEmpty
+                                    ? _selectedCustomAniListLists.toList()
+                                    : null,
+                                advancedScores: _advancedScores,
+                              ),
+                            );
+                          }
+                        } catch (_) {}
+
+                        try {
+                          final storageCtrl = Get.find<OfflineStorageController>();
+                          final itemType = widget.isManga ? ItemType.manga : ItemType.anime;
+                          final selectedLocalCats = _selectedLocalCategories.isNotEmpty
+                              ? _selectedLocalCategories.toList()
+                              : null;
+                          await storageCtrl.syncMediaToLocalCategory(
+                            widget.media,
+                            _localStatus,
+                            customCategories: selectedLocalCats,
+                          );
+                        } catch (_) {}
+
                         if (mounted) Get.back();
                       } finally {
                         if (mounted) {

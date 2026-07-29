@@ -2118,6 +2118,9 @@ class AnilistAuth extends GetxController {
     DateTime? startedAt,
     DateTime? completedAt,
     bool? isPrivate,
+    String? notes,
+    List<String>? customLists,
+    Map<String, double>? advancedScores,
   }) async {
     final token = AuthKeys.authToken.get<String?>();
     if (token == null || !isLoggedIn.value) {
@@ -2125,12 +2128,13 @@ class AnilistAuth extends GetxController {
     }
 
     const String mutation = '''
-  mutation UpdateMediaList(\$id: Int, \$progress: Int, \$score: Float, \$status: MediaListStatus, \$startedAt: FuzzyDateInput, \$completedAt: FuzzyDateInput, \$private: Boolean) {
-    SaveMediaListEntry(mediaId: \$id, progress: \$progress, score: \$score, status: \$status, startedAt: \$startedAt, completedAt: \$completedAt, private: \$private) {
+  mutation UpdateMediaList(\$id: Int, \$progress: Int, \$score: Float, \$status: MediaListStatus, \$startedAt: FuzzyDateInput, \$completedAt: FuzzyDateInput, \$private: Boolean, \$notes: String, \$customLists: [String], \$advancedScores: [Float]) {
+    SaveMediaListEntry(mediaId: \$id, progress: \$progress, score: \$score, status: \$status, startedAt: \$startedAt, completedAt: \$completedAt, private: \$private, notes: \$notes, customLists: \$customLists, advancedScores: \$advancedScores) {
       id
       status
       progress
       score
+      notes
       startedAt { year month day }
       completedAt { year month day }
     }
@@ -2177,6 +2181,15 @@ class AnilistAuth extends GetxController {
       }
       if (isPrivate != null) {
         variables['private'] = isPrivate;
+      }
+      if (notes != null) {
+        variables['notes'] = notes;
+      }
+      if (customLists != null && customLists.isNotEmpty) {
+        variables['customLists'] = customLists;
+      }
+      if (advancedScores != null && advancedScores.isNotEmpty) {
+        variables['advancedScores'] = advancedScores.values.toList();
       }
 
       final response = await http.post(

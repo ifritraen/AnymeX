@@ -469,6 +469,81 @@ class OfflineStorageController extends GetxController {
     });
   }
 
+  Future<void> syncMediaToLocalCategory(
+    Media media,
+    String? status, {
+    List<String>? customCategories,
+  }) async {
+    if (media.id.isEmpty) return;
+
+    final mediaType = media.mediaType ?? ItemType.anime;
+
+    final existingMedia = await isar.offlineMedias
+        .filter()
+        .mediaIdEqualTo(media.id)
+        .findFirst();
+
+    if (existingMedia == null) {
+      final offline = OfflineMedia(
+        mediaId: media.id,
+        name: media.title,
+        english: media.englishTitle,
+        japanese: media.japaneseTitle,
+        poster: media.poster,
+        cover: media.cover,
+        rating: media.rating,
+        type: media.type,
+        mediaTypeIndex: mediaType.index,
+      );
+      await isar.writeTxn(() async {
+        await isar.offlineMedias.put(offline);
+      });
+    }
+
+    String? targetList;
+    if (status != null && status.isNotEmpty) {
+      switch (status.toUpperCase()) {
+        case 'PLANNING':
+          targetList = 'Planning';
+          break;
+        case 'CURRENT':
+          targetList = mediaType == ItemType.anime ? 'Watching' : 'Reading';
+          break;
+        case 'COMPLETED':
+          targetList = 'Completed';
+          break;
+        case 'PAUSED':
+          targetList = 'Paused';
+          break;
+        case 'DROPPED':
+          targetList = 'Dropped';
+          break;
+        case 'REPEATING':
+          targetList = 'Repeating';
+          break;
+      }
+    }
+
+    if (targetList != null) {
+      var list = await getCustomListByName(targetList, mediaType: mediaType);
+      if (list == null) {
+        await addCustomList(targetList, mediaType: mediaType);
+      }
+      await addMediaToList(targetList, media.id, mediaType: mediaType);
+    }
+
+    if (customCategories != null && customCategories.isNotEmpty) {
+      for (final catName in customCategories) {
+        if (catName.trim().isEmpty) continue;
+        var list = await getCustomListByName(catName, mediaType: mediaType);
+        if (list == null) {
+          await addCustomList(catName, mediaType: mediaType);
+        }
+        await addMediaToList(catName, media.id, mediaType: mediaType);
+      }
+    }
+  }
+
   Future<List<OfflineMedia>> getMediaFromCustomList(String listName,
       {ItemType? mediaType}) async {
     final list = await getCustomListByName(listName, mediaType: mediaType);

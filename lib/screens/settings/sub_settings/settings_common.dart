@@ -1,3 +1,4 @@
+import 'package:anymex/controllers/services/anilist/anilist_data.dart';
 import 'package:anymex/controllers/service_handler/service_handler.dart';
 import 'package:anymex/controllers/services/community_service.dart';
 import 'package:anymex/controllers/settings/settings.dart';
@@ -119,6 +120,34 @@ class _SettingsCommonState extends State<SettingsCommon> {
                                     settings.showContinueWatchingCard = e,
                               ),
                             ),
+                             Obx(() {
+                               final count =
+                                   Get.find<Settings>().prevSeasonsCount;
+                               return CustomTile(
+                                 icon: Icons.history_rounded,
+                                 title: 'Previous Seasons / Years Count',
+                                 description:
+                                     '$count previous ${count == 1 ? "season/year" : "seasons/years"} for anime seasons & manga/novel years',
+                                 onTap: _showSeasonsCountDialog,
+                               );
+                             }),
+                             Obx(() {
+                               final currentCat = General.quickAddDefaultStatus
+                                   .get<String>('PLANNING');
+                               final labels = {
+                                 'PLANNING': 'Planning (Plan to Watch / Read)',
+                                 'CURRENT': 'Current (Watching / Reading)',
+                                 'COMPLETED': 'Completed',
+                                 'PROMPT': 'Always Open List Editor Sheet',
+                               };
+                               return CustomTile(
+                                 icon: Icons.bookmark_add_rounded,
+                                 title: 'Quick-Add Default Category',
+                                 description: labels[currentCat] ?? 'Planning',
+                                 isDescBold: true,
+                                 onTap: _showQuickAddCategoryDialog,
+                               );
+                             }),
                           ],
                         ),
                       ),
@@ -358,10 +387,110 @@ class _SettingsCommonState extends State<SettingsCommon> {
           ),
         );
       },
+  void _showSeasonsCountDialog() {
+    final settingsCtrl = Get.find<Settings>();
+    final currentCount = settingsCtrl.prevSeasonsCount;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.colors.surface,
+      useSafeArea: true,
+      isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const AnymexText(
+              text: 'Previous Seasons Count',
+              variant: TextVariant.bold,
+              size: 18,
+            ),
+            const SizedBox(height: 12),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: 10,
+                itemBuilder: (context, index) {
+                  final val = index + 1;
+                  final isSelected = val == currentCount;
+                  return ListTile(
+                    title: Text('$val ${val == 1 ? "season" : "seasons"}'),
+                    trailing: isSelected
+                        ? Icon(Icons.check_circle, color: context.colors.primary)
+                        : null,
+                    onTap: () {
+                      settingsCtrl.prevSeasonsCount = val;
+                      try {
+                        final anilistData = Get.find<AnilistData>();
+                        anilistData.fetchAnilistHomepage();
+                        anilistData.fetchAnilistMangaPage();
+                      } catch (_) {}
+                      Navigator.pop(ctx);
+                      setState(() {});
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
+  void _showQuickAddCategoryDialog() {
+    final currentCat = General.quickAddDefaultStatus.get<String>('PLANNING');
+    final options = [
+      {'key': 'PLANNING', 'label': 'Planning (Plan to Watch / Read)'},
+      {'key': 'CURRENT', 'label': 'Current (Watching / Reading)'},
+      {'key': 'COMPLETED', 'label': 'Completed'},
+      {'key': 'PROMPT', 'label': 'Always Open List Editor Sheet'},
+    ];
 
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.colors.surface,
+      useSafeArea: true,
+      isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const AnymexText(
+              text: 'Quick-Add Default Category',
+              variant: TextVariant.bold,
+              size: 18,
+            ),
+            const SizedBox(height: 12),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: options.length,
+                itemBuilder: (context, index) {
+                  final opt = options[index];
+                  final isSelected = opt['key'] == currentCat;
+                  return ListTile(
+                    title: Text(opt['label']!),
+                    trailing: isSelected
+                        ? Icon(Icons.check_circle, color: context.colors.primary)
+                        : null,
+                    onTap: () {
+                      General.quickAddDefaultStatus.set(opt['key']!);
+                      Navigator.pop(ctx);
+                      setState(() {});
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _BridgeModeOptionTile extends StatelessWidget {

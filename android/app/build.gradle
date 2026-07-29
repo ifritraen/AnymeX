@@ -48,7 +48,7 @@ android {
             def keystorePropertiesFile = rootProject.file('key.properties')
             if (keystorePropertiesFile.exists()) {
                 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-                def kFile = keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+                def kFile = keystoreProperties['storeFile'] ? rootProject.file(keystoreProperties['storeFile']) : null
                 if (kFile != null && kFile.exists()) {
                     keyAlias keystoreProperties['keyAlias']
                     keyPassword keystoreProperties['keyPassword']
@@ -66,7 +66,7 @@ android {
             boolean hasValidKey = false
             if (keystorePropertiesFile.exists()) {
                 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-                def kFile = keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+                def kFile = keystoreProperties['storeFile'] ? rootProject.file(keystoreProperties['storeFile']) : null
                 if (kFile != null && kFile.exists()) {
                     hasValidKey = true
                 }

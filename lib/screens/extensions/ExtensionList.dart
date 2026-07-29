@@ -305,6 +305,7 @@ class _ExtensionListState extends State<ExtensionList>
         child: Obx(() {
           final installedSources = _getInstalledList().toList(growable: false);
           final availableSources = _getAvailableList().toList(growable: false);
+          final isFetching = sourceController.isRepoFetching.value;
 
           final installed = widget.installed
               ? _applyOrder(_filterData(installedSources))
@@ -327,6 +328,13 @@ class _ExtensionListState extends State<ExtensionList>
               ? installed.isEmpty && updates.isEmpty
               : notInstalled.isEmpty &&
                   (!widget.showRecommended || recommended.isEmpty);
+
+          // Show loading spinner when fetching repos and available list is empty
+          if (!widget.installed && isEmpty && isFetching) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
 
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),

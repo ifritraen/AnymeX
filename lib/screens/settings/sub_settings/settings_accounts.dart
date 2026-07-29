@@ -13,6 +13,8 @@ import 'package:anymex/widgets/helper/scroll_wrapper.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:anymex/screens/library/widgets/library_sync_page.dart';
+import 'package:anymex/utils/function.dart';
 import 'package:flutter_iconly/flutter_iconly.dart';
 
 class SettingsAccounts extends StatefulWidget {
@@ -64,6 +66,16 @@ class _SettingsAccountsState extends State<SettingsAccounts> {
                           title: s['title'] as String,
                         ),
                       )),
+                  const SizedBox(height: 24),
+                  _buildSectionHeader(context, "Library Sync & Migration"),
+                  const SizedBox(height: 12),
+                  CustomTile(
+                    icon: Icons.sync_alt_rounded,
+                    title: 'Sync Local Library to AniList',
+                    description:
+                        'Bulk migrate local library categories and entries to AniList custom & standard lists',
+                    onTap: () => navigate(() => const LibrarySyncPage()),
+                  ),
                 ],
               ),
             ),

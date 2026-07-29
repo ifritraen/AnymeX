@@ -37,6 +37,9 @@ class UpdateListEntryParams {
   DateTime? completedAt;
   bool? isPrivate;
   int? season;
+  String? notes;
+  List<String>? customLists;
+  Map<String, double>? advancedScores;
 
   UpdateListEntryParams({
     required this.listId,
@@ -49,5 +52,8 @@ class UpdateListEntryParams {
     this.completedAt,
     this.isPrivate,
     this.season,
+    this.notes,
+    this.customLists,
+    this.advancedScores,
   });
 }

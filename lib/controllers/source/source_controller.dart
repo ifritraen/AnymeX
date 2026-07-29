@@ -82,6 +82,7 @@ class SourceController extends GetxController implements BaseService {
 
   final isExtensionsServiceAllowed = false.obs;
   final shouldShowExtensions = false.obs;
+  final isRepoFetching = false.obs;
 
   final _pendingRebuilds = <ItemType>{};
   Timer? _rebuildTimer;
@@ -453,8 +454,13 @@ class SourceController extends GetxController implements BaseService {
   }
 
   Future<void> _refreshRepos() async {
-    await _bridge.refreshExtensions(refreshAvailableSource: true);
-    await initExtensions();
+    isRepoFetching.value = true;
+    try {
+      await _bridge.refreshExtensions(refreshAvailableSource: true);
+      await initExtensions();
+    } finally {
+      isRepoFetching.value = false;
+    }
   }
 
   Future<void> refreshSourceState(Source source) async {

@@ -1,4 +1,8 @@
+import 'package:anymex/controllers/service_handler/params.dart';
+import 'package:anymex/controllers/service_handler/service_handler.dart';
 import 'package:anymex/controllers/settings/methods.dart';
+import 'package:anymex/database/data_keys/keys.dart';
+import 'package:anymex/widgets/non_widgets/snackbar.dart';
 import 'package:anymex/models/Anilist/anilist_media_user.dart';
 import 'package:anymex/models/Media/media.dart';
 import 'package:anymex/screens/anime/details_page.dart';
@@ -109,6 +113,8 @@ class GridAnimeCard extends StatelessWidget {
         : CardData.fromTrackedMedia(data);
     final itemType = type ?? (isManga ? ItemType.manga : ItemType.anime);
 
+    final badgeText = extractTitleBadge(media.title, format: media.format);
+
     return GestureDetector(
       onSecondaryTap: () {
         MediaPeekPopup.showIfUntracked(
@@ -172,6 +178,89 @@ class GridAnimeCard extends StatelessWidget {
                         fadeOutDuration: Duration.zero,
                         errorImage:
                             'https://s4.anilist.co/file/anilistcdn/character/large/default.jpg',
+                      ),
+                    ),
+                  ),
+                ),
+                if (badgeText != null)
+                  Positioned(
+                    top: 6,
+                    left: 6,
+                    child: Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: context.colors.primary.withOpacity(0.85),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.25),
+                          width: 0.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        badgeText,
+                        style: TextStyle(
+                          color: context.colors.onPrimary,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          height: 1.0,
+                        ),
+                      ),
+                    ),
+                  ),
+                Positioned(
+                  top: 6,
+                  right: 6,
+                  child: GestureDetector(
+                    onTap: () {
+                      unawaited(handleQuickAddTap(
+                        context,
+                        media.data,
+                        itemType,
+                      ));
+                    },
+                    onLongPress: () {
+                      MediaPeekPopup.show(
+                        context,
+                        media.data,
+                        itemType,
+                        '${media.id}-${itemType.name}-quick-add',
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: context.colors.surfaceContainerHigh.withOpacity(0.9),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.25),
+                          width: 0.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        media.data.userStatus != null &&
+                                media.data.userStatus!.isNotEmpty
+                            ? Icons.check_rounded
+                            : Icons.add_rounded,
+                        size: 14,
+                        color: media.data.userStatus != null &&
+                                media.data.userStatus!.isNotEmpty
+                            ? context.colors.primary
+                            : context.colors.onSurface,
                       ),
                     ),
                   ),
@@ -411,6 +500,83 @@ class BlurAnimeCard extends StatelessWidget {
           ]),
         ),
       ),
+    );
+  }
+}
+
+String? extractTitleBadge(String title, {String? format}) {
+  final seasonRegex = RegExp(
+    r'\b(?:Season\s*\d+|\d+(?:st|nd|rd|th)\s*Season|Part\s*\d+|Cour\s*\d+|S\d+)\b',
+    caseSensitive: false,
+  );
+  final seasonMatch = seasonRegex.firstMatch(title);
+  if (seasonMatch != null) {
+    return seasonMatch.group(0);
+  }
+
+  final formatRegex = RegExp(
+    r'\b(?:OVA|ONA|Specials?|Movie|TV\s*Special|Side\s*Story)\b',
+    caseSensitive: false,
+  );
+  final formatMatch = formatRegex.firstMatch(title);
+  if (formatMatch != null) {
+    return formatMatch.group(0);
+  }
+
+  if (format != null) {
+    final upperFormat = format.toUpperCase();
+    if (upperFormat == 'OVA' ||
+        upperFormat == 'ONA' ||
+        upperFormat == 'SPECIAL' ||
+        upperFormat == 'MOVIE') {
+      return upperFormat;
+    }
+  }
+
+  return null;
+}
+
+Future<void> handleQuickAddTap(
+  BuildContext context,
+  Media media,
+  ItemType itemType,
+) async {
+  final defaultCategory =
+      General.quickAddDefaultStatus.get<String>('PLANNING');
+
+  if (defaultCategory == 'PROMPT' ||
+      (media.userStatus != null && media.userStatus!.isNotEmpty)) {
+    MediaPeekPopup.show(
+      context,
+      media,
+      itemType,
+      '${media.id}-${itemType.name}-quick-add',
+    );
+    return;
+  }
+
+  try {
+    final serviceHandler = Get.find<ServiceHandler>();
+    final isManga = itemType == ItemType.manga || itemType == ItemType.novel;
+    final listId =
+        serviceHandler.onlineService.currentMedia.value.id ?? media.id;
+    await serviceHandler.onlineService.updateListEntry(UpdateListEntryParams(
+      listId: listId,
+      isAnime: !isManga,
+      status: defaultCategory,
+    ));
+    final statusLabel = defaultCategory == 'PLANNING'
+        ? 'Planning'
+        : defaultCategory == 'CURRENT'
+            ? (isManga ? 'Reading' : 'Watching')
+            : 'Completed';
+    snackBar('Added to $statusLabel');
+  } catch (_) {
+    MediaPeekPopup.show(
+      context,
+      media,
+      itemType,
+      '${media.id}-${itemType.name}-quick-add',
     );
   }
 }

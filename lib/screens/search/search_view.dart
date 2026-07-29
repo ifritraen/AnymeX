@@ -143,6 +143,10 @@ class _SearchPageState extends State<SearchPage>
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _performSearch();
       });
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _searchFocusNode.requestFocus();
+      });
     }
   }
 
@@ -596,6 +600,8 @@ class _SearchPageState extends State<SearchPage>
             : null,
       ),
       child: TextField(
+        autofocus: widget.searchTerm.isEmpty,
+        textInputAction: TextInputAction.search,
         controller: _searchController,
         focusNode: _searchFocusNode,
         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -1428,6 +1434,7 @@ class _SearchPageState extends State<SearchPage>
 
   Widget _buildListItem(Media media) {
     final heroTag = '${media.id}-search-list';
+    final badgeText = extractTitleBadge(media.title);
     return GestureDetector(
       onTap: () => _navigateToDetails(media, heroTag),
       onLongPress: () {
@@ -1449,21 +1456,85 @@ class _SearchPageState extends State<SearchPage>
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              Hero(
-                tag: heroTag,
-                transitionOnUserGestures: true,
-                flightShuttleBuilder: AnymeXImage.heroFlightShuttleBuilder,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: AnymeXImage(
-                    width: 60,
-                    height: 88,
-                    imageUrl: media.poster,
-                    radius: 0,
-                    fadeInDuration: Duration.zero,
-                    fadeOutDuration: Duration.zero,
+              Stack(
+                children: [
+                  Hero(
+                    tag: heroTag,
+                    transitionOnUserGestures: true,
+                    flightShuttleBuilder: AnymeXImage.heroFlightShuttleBuilder,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: AnymeXImage(
+                        width: 60,
+                        height: 88,
+                        imageUrl: media.poster,
+                        radius: 0,
+                        fadeInDuration: Duration.zero,
+                        fadeOutDuration: Duration.zero,
+                      ),
+                    ),
                   ),
-                ),
+                  if (badgeText != null)
+                    Positioned(
+                      top: 4,
+                      left: 4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: context.colors.primary.withOpacity(0.85),
+                          borderRadius: BorderRadius.circular(5),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.25),
+                            width: 0.5,
+                          ),
+                        ),
+                        child: Text(
+                          badgeText,
+                          style: TextStyle(
+                            color: context.colors.onPrimary,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                            height: 1.0,
+                          ),
+                        ),
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: GestureDetector(
+                      onTap: () {
+                        unawaited(handleQuickAddTap(
+                          context,
+                          media,
+                          effectiveType,
+                        ));
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          color: context.colors.surfaceContainerHigh
+                              .withOpacity(0.9),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.25),
+                            width: 0.5,
+                          ),
+                        ),
+                        child: Icon(
+                          media.userStatus != null &&
+                                  media.userStatus!.isNotEmpty
+                              ? Icons.check_rounded
+                              : Icons.add_rounded,
+                          size: 12,
+                          color: media.userStatus != null &&
+                                  media.userStatus!.isNotEmpty
+                              ? context.colors.primary
+                              : context.colors.onSurface,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(width: 16),
               Expanded(

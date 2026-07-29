@@ -28,6 +28,7 @@ enum General {
   useHighRefreshRate,
   preferredDisplayMode,
   navigationTabOrder,
+  quickAddDefaultStatus,
 }
 
 enum ThemeKeys {
@@ -142,6 +143,7 @@ enum ServiceKeys { serviceType }
 enum SyncKeys {
   gistGithubToken,
   gistGithubUsername,
+  gistSyncEnabled,
   gistAutoDeleteCompleted,
   gistExitSyncNotifications,
 }

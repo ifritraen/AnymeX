@@ -112,6 +112,8 @@ class GistSyncController extends GetxController {
     try {
       final token = SyncKeys.gistGithubToken.get<String>('');
       final username = SyncKeys.gistGithubUsername.get<String>('');
+      syncEnabled.value =
+          SyncKeys.gistSyncEnabled.get<bool>(syncEnabled.value);
       autoDeleteCompletedOnExit.value = SyncKeys.gistAutoDeleteCompleted
           .get<bool>(autoDeleteCompletedOnExit.value);
       showExitSyncNotifications.value = SyncKeys.gistExitSyncNotifications
@@ -258,6 +260,20 @@ class GistSyncController extends GetxController {
     }
   }
 
+  Future<void> setSyncEnabled(bool enabled) async {
+    syncEnabled.value = enabled;
+    try {
+      SyncKeys.gistSyncEnabled.set(enabled);
+      if (enabled) {
+        snackBar('GitHub Gist Sync enabled');
+      } else {
+        snackBar('GitHub Gist Sync disabled (account stays connected)');
+      }
+    } catch (e) {
+      Logger.i('[GistSync] setSyncEnabled: $e');
+    }
+  }
+
   Future<void> setExitSyncNotifications(bool enabled) async {
     showExitSyncNotifications.value = enabled;
     try {
@@ -343,6 +359,10 @@ class GistSyncController extends GetxController {
   Future<void> manualSyncNow() async {
     if (!isLoggedIn.value || !_service.isReady) {
       errorSnackBar('Connect GitHub first to sync progress.');
+      return;
+    }
+    if (!syncEnabled.value) {
+      infoSnackBar('GitHub Gist Sync is currently disabled.');
       return;
     }
     if (isSyncing.value) {

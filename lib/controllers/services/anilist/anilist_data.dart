@@ -96,6 +96,18 @@ String _getPrevSeasonsPopularTitle(int count) {
   return 'Most Popular Previous $count Seasons';
 }
 
+String _getPrevYearsTopRatedTitle(int count) {
+  if (count == 3) return 'Highest Rated Previous Three Years';
+  if (count == 1) return 'Highest Rated Previous Year';
+  return 'Highest Rated Previous $count Years';
+}
+
+String _getPrevYearsPopularTitle(int count) {
+  if (count == 3) return 'Most Popular Previous Three Years';
+  if (count == 1) return 'Most Popular Previous Year';
+  return 'Most Popular Previous $count Years';
+}
+
 List<Media> _sortMediaByRating(List<Media> items) {
   final list = items.removeDupes();
   list.sort((a, b) {
@@ -380,8 +392,8 @@ class AnilistData extends GetxController implements BaseService, OnlineService {
   @override
   RxList<Widget> mangaWidgets(BuildContext context) {
     final prevCount = Get.find<Settings>().prevSeasonsCount;
-    final topRatedTitle = _getPrevSeasonsTopRatedTitle(prevCount);
-    final popularTitle = _getPrevSeasonsPopularTitle(prevCount);
+    final topRatedTitle = _getPrevYearsTopRatedTitle(prevCount);
+    final popularTitle = _getPrevYearsPopularTitle(prevCount);
     return [
       buildBigCarousel(trendingMangas, true),
       buildMangaSection('Trending Manga', trendingMangas,
@@ -391,11 +403,11 @@ class AnilistData extends GetxController implements BaseService, OnlineService {
       buildMangaSection('Popular Manga', popularMangas,
           onSeeAll: () => _navigateToViewAll('Popular Manga', popularMangas, ItemType.manga)),
       if (popularThisSeasonMangas.isNotEmpty)
-        buildMangaSection('Popular This Season', popularThisSeasonMangas,
-            onSeeAll: () => _navigateToViewAll('Popular This Season', popularThisSeasonMangas, ItemType.manga)),
+        buildMangaSection('Popular This Year', popularThisSeasonMangas,
+            onSeeAll: () => _navigateToViewAll('Popular This Year', popularThisSeasonMangas, ItemType.manga)),
       if (topRatedThisSeasonMangas.isNotEmpty)
-        buildMangaSection('Highest Rated This Season', topRatedThisSeasonMangas,
-            onSeeAll: () => _navigateToViewAll('Highest Rated This Season', topRatedThisSeasonMangas, ItemType.manga)),
+        buildMangaSection('Highest Rated This Year', topRatedThisSeasonMangas,
+            onSeeAll: () => _navigateToViewAll('Highest Rated This Year', topRatedThisSeasonMangas, ItemType.manga)),
       if (topRatedPrev3SeasonsMangas.isNotEmpty)
         buildMangaSection(topRatedTitle, topRatedPrev3SeasonsMangas,
             onSeeAll: () => _navigateToViewAll(topRatedTitle, topRatedPrev3SeasonsMangas, ItemType.manga)),
@@ -422,8 +434,8 @@ class AnilistData extends GetxController implements BaseService, OnlineService {
 
   RxList<Widget> novelWidgets(BuildContext context) {
     final prevCount = Get.find<Settings>().prevSeasonsCount;
-    final topRatedTitle = _getPrevSeasonsTopRatedTitle(prevCount);
-    final popularTitle = _getPrevSeasonsPopularTitle(prevCount);
+    final topRatedTitle = _getPrevYearsTopRatedTitle(prevCount);
+    final popularTitle = _getPrevYearsPopularTitle(prevCount);
     return [
       if (trendingNovels.isNotEmpty) buildBigCarousel(trendingNovels, true),
       if (latestNovels.isNotEmpty)
@@ -436,11 +448,11 @@ class AnilistData extends GetxController implements BaseService, OnlineService {
         buildMangaSection('Popular Light Novels', popularNovels,
             onSeeAll: () => _navigateToViewAll('Popular Light Novels', popularNovels, ItemType.novel)),
       if (popularThisSeasonNovels.isNotEmpty)
-        buildMangaSection('Popular This Season', popularThisSeasonNovels,
-            onSeeAll: () => _navigateToViewAll('Popular This Season', popularThisSeasonNovels, ItemType.novel)),
+        buildMangaSection('Popular This Year', popularThisSeasonNovels,
+            onSeeAll: () => _navigateToViewAll('Popular This Year', popularThisSeasonNovels, ItemType.novel)),
       if (topRatedThisSeasonNovels.isNotEmpty)
-        buildMangaSection('Highest Rated This Season', topRatedThisSeasonNovels,
-            onSeeAll: () => _navigateToViewAll('Highest Rated This Season', topRatedThisSeasonNovels, ItemType.novel)),
+        buildMangaSection('Highest Rated This Year', topRatedThisSeasonNovels,
+            onSeeAll: () => _navigateToViewAll('Highest Rated This Year', topRatedThisSeasonNovels, ItemType.novel)),
       if (topRatedPrev3SeasonsNovels.isNotEmpty)
         buildMangaSection(topRatedTitle, topRatedPrev3SeasonsNovels,
             onSeeAll: () => _navigateToViewAll(topRatedTitle, topRatedPrev3SeasonsNovels, ItemType.novel)),
@@ -673,24 +685,25 @@ class AnilistData extends GetxController implements BaseService, OnlineService {
 
     final StringBuffer prevQueries = StringBuffer();
     for (int i = 0; i < prevSeasons.length; i++) {
+      final y = prevSeasons[i].year;
       prevQueries.write('''
     prev${i + 1}TopRatedManga: Page(page: 1, perPage: 15) {
-      media(type: MANGA, season: ${prevSeasons[i].season}, seasonYear: ${prevSeasons[i].year}, sort: SCORE_DESC) {
+      media(type: MANGA, startDate_greater: ${y}0000, startDate_lesser: ${y + 1}0000, sort: SCORE_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
     prev${i + 1}PopularManga: Page(page: 1, perPage: 15) {
-      media(type: MANGA, season: ${prevSeasons[i].season}, seasonYear: ${prevSeasons[i].year}, sort: POPULARITY_DESC) {
+      media(type: MANGA, startDate_greater: ${y}0000, startDate_lesser: ${y + 1}0000, sort: POPULARITY_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
     prev${i + 1}TopRatedNovels: Page(page: 1, perPage: 15) {
-      media(type: MANGA, format: NOVEL, season: ${prevSeasons[i].season}, seasonYear: ${prevSeasons[i].year}, sort: SCORE_DESC) {
+      media(type: MANGA, format: NOVEL, startDate_greater: ${y}0000, startDate_lesser: ${y + 1}0000, sort: SCORE_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
     prev${i + 1}PopularNovels: Page(page: 1, perPage: 15) {
-      media(type: MANGA, format: NOVEL, season: ${prevSeasons[i].season}, seasonYear: ${prevSeasons[i].year}, sort: POPULARITY_DESC) {
+      media(type: MANGA, format: NOVEL, startDate_greater: ${y}0000, startDate_lesser: ${y + 1}0000, sort: POPULARITY_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
@@ -947,12 +960,22 @@ averageScore
 
     # Seasonal Manga & Novels
     popularThisSeasonManga: Page(page: 1, perPage: 15) {
-      media(type: MANGA, season: ${currSeason.season}, seasonYear: ${currSeason.year}, sort: POPULARITY_DESC) {
+      media(type: MANGA, startDate_greater: ${currSeason.year}0000, sort: POPULARITY_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
     topRatedThisSeasonManga: Page(page: 1, perPage: 15) {
-      media(type: MANGA, season: ${currSeason.season}, seasonYear: ${currSeason.year}, sort: SCORE_DESC) {
+      media(type: MANGA, startDate_greater: ${currSeason.year}0000, sort: SCORE_DESC) {
+        id title { userPreferred romaji english native } coverImage { large } type averageScore
+      }
+    }
+    popularThisSeasonNovels: Page(page: 1, perPage: 15) {
+      media(type: MANGA, format: NOVEL, startDate_greater: ${currSeason.year}0000, sort: POPULARITY_DESC) {
+        id title { userPreferred romaji english native } coverImage { large } type averageScore
+      }
+    }
+    topRatedThisSeasonNovels: Page(page: 1, perPage: 15) {
+      media(type: MANGA, format: NOVEL, startDate_greater: ${currSeason.year}0000, sort: SCORE_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
@@ -1931,17 +1954,37 @@ averageScore
   Rx<Profile> get profileData => anilistAuth.profileData;
 
   @override
-  Future<void> updateListEntry(UpdateListEntryParams params) =>
-      anilistAuth.updateListEntry(
-          listId: params.listId,
-          malId: params.syncIds?[0],
-          score: params.score,
-          status: params.status,
-          progress: params.progress,
-          isAnime: params.isAnime,
-          startedAt: params.startedAt,
-          completedAt: params.completedAt,
-          isPrivate: params.isPrivate);
+  Future<void> updateListEntry(UpdateListEntryParams params) async {
+    await anilistAuth.updateListEntry(
+      listId: params.listId,
+      malId: params.syncIds?[0],
+      score: params.score,
+      status: params.status,
+      progress: params.progress,
+      isAnime: params.isAnime,
+      startedAt: params.startedAt,
+      completedAt: params.completedAt,
+      isPrivate: params.isPrivate,
+      notes: params.notes,
+      customLists: params.customLists,
+      advancedScores: params.advancedScores,
+    );
+
+    try {
+      final offlineCtrl = Get.find<OfflineStorageController>();
+      final itemType = params.isAnime ? ItemType.anime : ItemType.manga;
+      final media = currentMedia.value.id.isNotEmpty
+          ? currentMedia.value
+          : Media(id: params.listId, title: 'Media', mediaType: itemType);
+      await offlineCtrl.syncMediaToLocalCategory(
+        media,
+        params.status,
+        customCategories: params.customLists,
+      );
+    } catch (e) {
+      Logger.i('[AnilistData] Local sync failed: $e');
+    }
+  }
 
   @override
   Future<void> deleteListEntry(String listId, {bool isAnime = true}) async =>

@@ -46,6 +46,8 @@ const settingsSearchIndex = <String, Map<String?, List<String>>>{
       'Hide Adult Content',
       'Ask for tracking permission',
       'Show Continue Watching Card',
+      'Previous Seasons Count',
+      'Quick-Add Default Category',
       'Manage Anilist Lists',
       'Manage MyAnimeList Lists',
     ],

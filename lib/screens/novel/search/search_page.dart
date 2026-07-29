@@ -87,6 +87,10 @@ class _NovelSearchPageState extends State<NovelSearchPage>
       _extensionResults = [];
       _errorMessage = null;
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _searchFocusNode.requestFocus();
+    });
   }
 
   void _saveHistory() {
@@ -211,6 +215,8 @@ class _NovelSearchPageState extends State<NovelSearchPage>
             : null,
       ),
       child: TextField(
+        autofocus: true,
+        textInputAction: TextInputAction.search,
         controller: _searchController,
         focusNode: _searchFocusNode,
         style: Theme.of(context).textTheme.bodyLarge?.copyWith(

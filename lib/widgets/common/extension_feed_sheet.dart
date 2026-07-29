@@ -51,13 +51,14 @@ class ExtensionFeedManager {
 
     final List<ExtensionFeedItemConfig> result = [];
     for (final cfg in existingConfigs) {
-      if (installedSources.any((s) => s.id == cfg.sourceId)) {
+      if (installedSources.any((s) => (s.id?.isNotEmpty == true ? s.id : s.name ?? '') == cfg.sourceId)) {
         result.add(cfg);
       }
     }
     for (final src in installedSources) {
-      if (!result.any((c) => c.sourceId == src.id)) {
-        result.add(ExtensionFeedItemConfig(sourceId: src.id ?? src.name ?? ''));
+      final key = src.id?.isNotEmpty == true ? src.id! : (src.name ?? '');
+      if (!result.any((c) => c.sourceId == key)) {
+        result.add(ExtensionFeedItemConfig(sourceId: key));
       }
     }
     return result;
