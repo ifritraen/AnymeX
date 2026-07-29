@@ -1059,7 +1059,6 @@ averageScore
 
       topRatedPrev3SeasonsNovels.value = _sortMediaByRating(combinedNovelsTopRated);
       popularPrev3SeasonsNovels.value = _sortMediaByPopularity(combinedNovelsPopular);
-    }
     } else {
       throw Exception(
           'Failed to load AniList manga data: ${response.statusCode}');
