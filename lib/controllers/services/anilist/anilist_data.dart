@@ -674,22 +674,22 @@ class AnilistData extends GetxController implements BaseService, OnlineService {
     final StringBuffer prevQueries = StringBuffer();
     for (int i = 0; i < prevSeasons.length; i++) {
       prevQueries.write('''
-    prev${i + 1}TopRatedManga: Page(page: 1, perPage: \$perPage) {
+    prev${i + 1}TopRatedManga: Page(page: 1, perPage: 15) {
       media(type: MANGA, season: ${prevSeasons[i].season}, seasonYear: ${prevSeasons[i].year}, sort: SCORE_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
-    prev${i + 1}PopularManga: Page(page: 1, perPage: \$perPage) {
+    prev${i + 1}PopularManga: Page(page: 1, perPage: 15) {
       media(type: MANGA, season: ${prevSeasons[i].season}, seasonYear: ${prevSeasons[i].year}, sort: POPULARITY_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
-    prev${i + 1}TopRatedNovels: Page(page: 1, perPage: \$perPage) {
+    prev${i + 1}TopRatedNovels: Page(page: 1, perPage: 15) {
       media(type: MANGA, format: NOVEL, season: ${prevSeasons[i].season}, seasonYear: ${prevSeasons[i].year}, sort: SCORE_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
-    prev${i + 1}PopularNovels: Page(page: 1, perPage: \$perPage) {
+    prev${i + 1}PopularNovels: Page(page: 1, perPage: 15) {
       media(type: MANGA, format: NOVEL, season: ${prevSeasons[i].season}, seasonYear: ${prevSeasons[i].year}, sort: POPULARITY_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
@@ -698,9 +698,9 @@ class AnilistData extends GetxController implements BaseService, OnlineService {
     }
 
     final String query = '''
-  query CombinedMangaQueries(\$perPage: Int) {
+  query CombinedMangaQueries {
     # Popular Mangas (Page 1)
-    popularMangas: Page(page: 1, perPage: \$perPage) {
+    popularMangas: Page(page: 1, perPage: 15) {
       media(sort: POPULARITY_DESC, type: MANGA) {
         id
         title {
@@ -718,7 +718,7 @@ averageScore
     }
 
     # Popular Mangas (Page 2)
-    morePopularMangas: Page(page: 2, perPage: \$perPage) {
+    morePopularMangas: Page(page: 2, perPage: 15) {
       media(sort: POPULARITY_DESC, type: MANGA) {
         id
         title {
@@ -736,7 +736,7 @@ averageScore
     }
 
     # Latest Mangas (Page 1)
-    latestMangas: Page(page: 1, perPage: \$perPage) {
+    latestMangas: Page(page: 1, perPage: 15) {
       media(status: FINISHED, 
       sort: [END_DATE_DESC, SCORE_DESC, POPULARITY_DESC], 
       averageScore_greater: 70, 
@@ -757,7 +757,7 @@ averageScore
     }
 
     # Most Favorite Mangas (Page 1)
-    mostFavoriteMangas: Page(page: 1, perPage: \$perPage) {
+    mostFavoriteMangas: Page(page: 1, perPage: 15) {
       media(sort: FAVOURITES_DESC, type: MANGA) {
         id
         title {
@@ -775,7 +775,7 @@ averageScore
     }
 
     # Top Rated Mangas (Page 1)
-    topRated: Page(page: 1, perPage: \$perPage) {
+    topRated: Page(page: 1, perPage: 15) {
       media(sort: SCORE_DESC, type: MANGA) {
         id
         title {
@@ -794,7 +794,7 @@ averageScore
     }
 
     # Top Updated Mangas (Page 1)
-    topUpdated: Page(page: 1, perPage: \$perPage) {
+    topUpdated: Page(page: 1, perPage: 15) {
       media(sort: UPDATED_AT_DESC, type: MANGA) {
         id
         title {
@@ -813,7 +813,7 @@ averageScore
     }
 
     # Top Ongoing Mangas (Page 1)
-    topOngoing: Page(page: 1, perPage: \$perPage) {
+    topOngoing: Page(page: 1, perPage: 15) {
       media(status: RELEASING, sort: SCORE_DESC, type: MANGA) {
         id
         title {
@@ -832,7 +832,7 @@ averageScore
     }
 
     # Trending Mangas (Page 1)
-    trendingManga: Page(page: 1, perPage: \$perPage) {
+    trendingManga: Page(page: 1, perPage: 15) {
       media(sort: TRENDING_DESC, type: MANGA) {
         id
         title {
@@ -853,7 +853,7 @@ averageScore
     }
 
     # Trending Novels (Page 1)
-    trendingNovels: Page(page: 1, perPage: \$perPage) {
+    trendingNovels: Page(page: 1, perPage: 15) {
       media(sort: TRENDING_DESC, type: MANGA, format: NOVEL) {
         id
         title {
@@ -874,7 +874,7 @@ averageScore
     }
 
     # Popular Novels (Page 1)
-    popularNovels: Page(page: 1, perPage: \$perPage) {
+    popularNovels: Page(page: 1, perPage: 15) {
       media(sort: POPULARITY_DESC, type: MANGA, format: NOVEL) {
         id
         title {
@@ -892,7 +892,7 @@ averageScore
     }
 
     # Latest Novels (Page 1)
-    latestNovels: Page(page: 1, perPage: \$perPage) {
+    latestNovels: Page(page: 1, perPage: 15) {
       media(sort: START_DATE_DESC, type: MANGA, format: NOVEL, chapters_greater: 0) {
         id
         title {
@@ -910,7 +910,7 @@ averageScore
     }
 
     # Upcoming Novels (Page 1)
-    upcomingNovels: Page(page: 1, perPage: \$perPage) {
+    upcomingNovels: Page(page: 1, perPage: 15) {
       media(status: NOT_YET_RELEASED, sort: START_DATE_DESC, type: MANGA, format: NOVEL) {
         id
         title {
@@ -928,7 +928,7 @@ averageScore
     }
 
     # Top Rated Novels (Page 1)
-    topRatedNovels: Page(page: 1, perPage: \$perPage) {
+    topRatedNovels: Page(page: 1, perPage: 15) {
       media(sort: SCORE_DESC, type: MANGA, format: NOVEL) {
         id
         title {
@@ -946,12 +946,12 @@ averageScore
     }
 
     # Seasonal Manga & Novels
-    popularThisSeasonManga: Page(page: 1, perPage: \$perPage) {
+    popularThisSeasonManga: Page(page: 1, perPage: 15) {
       media(type: MANGA, season: ${currSeason.season}, seasonYear: ${currSeason.year}, sort: POPULARITY_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
     }
-    topRatedThisSeasonManga: Page(page: 1, perPage: \$perPage) {
+    topRatedThisSeasonManga: Page(page: 1, perPage: 15) {
       media(type: MANGA, season: ${currSeason.season}, seasonYear: ${currSeason.year}, sort: SCORE_DESC) {
         id title { userPreferred romaji english native } coverImage { large } type averageScore
       }
@@ -971,9 +971,6 @@ averageScore
       headers: headers,
       body: json.encode({
         'query': query,
-        'variables': {
-          'perPage': 15,
-        },
       }),
     );
 
